@@ -20,7 +20,7 @@ class Shubert:
    """
 
    def __init__(self, n):
-      """Initialise device properties."""
+      """Initialise Shubert function properties."""
       if type(n) is not int or n <= 0:
          raise ValueError('Dimension must be integer greater than 0.')
       self.n = n

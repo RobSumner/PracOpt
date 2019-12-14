@@ -28,13 +28,21 @@ class Shubert:
       self.x_min = -2
       self.x_max = 2
 
-   def is_feasible(self, x):
-      """Returns true if point x is feasible."""
+   def is_feasible(self, x, index=None):
+      """Returns true if point x is feasible.
+         If index is supplied, the coordinate with this
+         index is checked for feasibility."""
       if len(x) != self.n:
          raise ValueError('Dimension of x does not match function definition.')
+      if index is not None:
+         if index < 0 or index >= self.n:
+            raise ValueError('Index exceeds dimension of function.')
 
-      for x_i in x:
-         if x_i < self.x_min or x_i > self.x_max:
+      if index is None:
+         for x_i in x:
+            if x_i < self.x_min or x_i > self.x_max:
+               return False
+      elif x[index] < self.x_min or x[index] > self.x_max:
             return False
       return True
 

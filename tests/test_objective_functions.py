@@ -26,29 +26,35 @@ def test_shubert_init():
    with pytest.raises(ValueError):
       objective.Shubert(-10)
 
-@pytest.mark.parametrize("point,feasible", [([1,1],      True),  
-                                            ([2,2],      True), 
-                                            ([-2,-2],    True),  
-                                            ([-3,1],     False),
-                                            ([-1,3],     False), 
-                                            ([100,100],  False)])
-def test_shubert2_feasible(new_shubert2, point, feasible):
+@pytest.mark.parametrize("point,id,feasible", [([ 1, 1], 0, True),  
+                                               ([ 2, 2], 0, True), 
+                                               ([-2,-2], 0, True),  
+                                               ([-3, 1], 0, False),
+                                               ([-1, 3], 1, False), 
+                                               ([10,10], 0, False)])
+def test_shubert2_feasible(new_shubert2, point, id, feasible):
    """Test the feasibility check for 2D Shubert function."""
    assert new_shubert2.is_feasible(point) == feasible
+   assert new_shubert2.is_feasible(point, id) == feasible
    with pytest.raises(ValueError):
       new_shubert2.is_feasible([1,1,1])
+   with pytest.raises(ValueError):
+      new_shubert2.is_feasible([1])
 
-@pytest.mark.parametrize("point,feasible", [([1,1,1,1,1],            True), 
-                                            ([2,2,2,2,2],            True), 
-                                            ([-2,-2,-2,-2,-2],       True),
-                                            ([-3,1,1,1,1],           False),
-                                            ([-1,3,2,3,4],           False), 
-                                            ([100,100,100,100,100],  False)])
-def test_shubert5_feasible(new_shubert5, point, feasible):
+@pytest.mark.parametrize("point,id,feasible", [([ 1, 1, 1, 1, 1], 0, True), 
+                                               ([ 2, 2, 2, 2, 2], 0, True), 
+                                               ([-2,-2,-2,-2,-2], 0, True),
+                                               ([-3, 1, 1, 1, 1], 0, False),
+                                               ([-1, 3, 2, 3, 4], 1, False), 
+                                               ([10,10,10,10,10], 1, False)])
+def test_shubert5_feasible(new_shubert5, point, id, feasible):
    """Test the feasibility check for 5D Shubert function."""
    assert new_shubert5.is_feasible(point) == feasible
+   assert new_shubert5.is_feasible(point, id) == feasible
    with pytest.raises(ValueError):
-      new_shubert5.is_feasible([1,1,1])
+      new_shubert5.is_feasible([1,1,1,1])
+   with pytest.raises(ValueError):
+      new_shubert5.is_feasible([1,1,1,1,1,1])
 
 
 @pytest.mark.parametrize("point,value", [([1,1],    -6.3145), 

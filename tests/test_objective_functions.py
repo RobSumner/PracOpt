@@ -3,10 +3,6 @@
 import pytest
 from optimiser import objective
 
-def test_check():
-   A = 1
-   assert A == 1
-
 @pytest.fixture
 def new_shubert5():
     """Return a new instance of the Shubert objective with n = 5."""

@@ -1,0 +1,7 @@
+*.png
+*.mp4
+.vscode/*
+*.json
+*.pyc
+.vscode/*
+Optimiser.egg-info/*

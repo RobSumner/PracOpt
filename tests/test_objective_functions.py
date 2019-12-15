@@ -86,6 +86,9 @@ def test_shubert2_values(new_shubert2, point, value):
    with pytest.raises(ValueError):
       new_shubert2.f([1,2,3])
 
+   new_shubert2.reset()
+   assert new_shubert2.evaluations == 0
+
 
 @pytest.mark.parametrize("point,value", [([   1,   1,   1,  1,   1], -15.7862), 
                                          ([  -1,   1,  -1,  1,  -1], -44.1807),
@@ -107,5 +110,8 @@ def test_shubert5_values(new_shubert5, point, value):
       
    with pytest.raises(ValueError):
       new_shubert5.f([1,2,3,4,5,6])
+
+   new_shubert5.reset()
+   assert new_shubert5.evaluations == 0
 
 

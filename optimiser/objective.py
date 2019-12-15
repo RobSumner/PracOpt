@@ -62,6 +62,9 @@ class Shubert:
             obj_val += j*np.sin((j+1)*x[i] + j)
       return obj_val
 
+   def reset(self):
+      """Reset variable objective function parameters."""
+      self.evaluations = 0
 
 class ObjectiveTest:
    """1 dimensional test function with limits [-2,2]
@@ -90,4 +93,8 @@ class ObjectiveTest:
    def f(self, x):
       """Return absolute value of x."""
       return np.linalg.norm(x, 1)
+   
+   def reset(self):
+      """Reset variable objective function parameters."""
+      self.evaluations = 0
    

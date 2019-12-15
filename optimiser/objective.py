@@ -2,7 +2,8 @@
 
 Classes
 -------
-Shubert - n dimensional Shubert function
+Shubert - n dimensional Shubert function.
+ObjectiveTest - n dimensional test function. 
 """
 
 import numpy as np
@@ -27,6 +28,7 @@ class Shubert:
 
       self.x_min = -2
       self.x_max = 2
+      self.evaluations = 0
 
    def is_feasible(self, x, index=None):
       """Returns true if point x is feasible.
@@ -51,9 +53,41 @@ class Shubert:
       if not self.is_feasible(x):
          raise ValueError("Point x must lie in feaisble region.")
 
+      # Increment evaluation number
+      self.evaluations += 1
+
       obj_val = 0
       for i in range(0, self.n):
          for j in range(1, 6):
             obj_val += j*np.sin((j+1)*x[i] + j)
       return obj_val
+
+
+class ObjectiveTest:
+   """1 dimensional test function with limits [-2,2]
+   Parameters
+   ---------- 
+
+   Public Methods
+   --------------
+   is_feasible(x) - Returns True if x lies in range [-2,2].
+   f(x)  - Returns magnitude of x. 
+   """
+
+   def __init__(self):
+      """Initialise Shubert function properties."""
+      self.n = 1
+      self.x_max = 2
+      self.x_min = -2
+
+   def is_feasible(self, x, index=None):
+      """Returns true for all points."""
+      for x_i in x:
+         if x_i < self.x_min or x_i > self.x_max:
+            return False
+      return True
+
+   def f(self, x):
+      """Return absolute value of x."""
+      return np.linalg.norm(x, 1)
    

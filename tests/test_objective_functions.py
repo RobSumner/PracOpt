@@ -19,6 +19,7 @@ def test_shubert_init():
    assert obj1.n == 1
    assert obj1.x_min == -2
    assert obj1.x_max == 2
+   assert obj1.evaluations == 0
 
    with pytest.raises(ValueError):
       objective.Shubert(0)
@@ -74,7 +75,9 @@ def test_shubert5_feasible(new_shubert5, point, id, feasible):
 def test_shubert2_values(new_shubert2, point, value):
    """Test the returned objective function values for 2D Shubert function."""
    # Check against MATLAB 4dp values
+   evals = new_shubert2.evaluations
    obj_val = round(new_shubert2.f(point)*10e03)/10e03
+   assert new_shubert2.evaluations == evals + 1
    assert obj_val == value
 
    with pytest.raises(ValueError):
@@ -94,7 +97,9 @@ def test_shubert2_values(new_shubert2, point, value):
 def test_shubert5_values(new_shubert5, point, value):
    """Test the returned objective function values for 5D Shubert function."""
    # Check against MATLAB 4dp values
+   evals = new_shubert5.evaluations
    obj_val = round(new_shubert5.f(point)*10e03)/10e03
+   assert new_shubert5.evaluations == evals + 1
    assert obj_val == value
 
    with pytest.raises(ValueError):

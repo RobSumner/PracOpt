@@ -6,12 +6,36 @@ from optimiser.optimiser import SimAnneal, TrialMode, InitialTempMode
 from optimiser.objective import Shubert, ObjectiveTest
 
 @pytest.fixture
+def new_test_sim():
+   """Return a new instance of the simulated annealing class
+      with 5D test function.
+   """
+   obj = ObjectiveTest()
+   return SimAnneal(obj, TrialMode.BASIC, InitialTempMode.KIRKPATRICK)
+
+@pytest.fixture
+def new_test_sim_white():
+   """Return a new instance of the simulated annealing class
+      with 5D test function.
+   """
+   obj = ObjectiveTest()
+   return SimAnneal(obj, TrialMode.BASIC, InitialTempMode.WHITE)
+
+@pytest.fixture
 def new_sim2():
    """Return a new instance of the simulated annealing class
       with 2D Shubert objective function.
    """
    obj = Shubert(2)
    return SimAnneal(obj, TrialMode.BASIC, InitialTempMode.KIRKPATRICK)
+
+@pytest.fixture
+def new_sim2_white():
+   """Return a new instance of the simulated annealing class
+      with 2D Shubert objective function.
+   """
+   obj = Shubert(2)
+   return SimAnneal(obj, TrialMode.BASIC, InitialTempMode.WHITE)
 
 @pytest.fixture
 def new_sim5():
@@ -22,12 +46,12 @@ def new_sim5():
    return SimAnneal(obj, TrialMode.BASIC, InitialTempMode.KIRKPATRICK)
 
 @pytest.fixture
-def new_test_sim():
+def new_sim5_white():
    """Return a new instance of the simulated annealing class
-      with 5D test function.
+      with 2D Shubert objective function.
    """
-   obj = ObjectiveTest()
-   return SimAnneal(obj, TrialMode.BASIC, InitialTempMode.KIRKPATRICK)
+   obj = Shubert(5)
+   return SimAnneal(obj, TrialMode.BASIC, InitialTempMode.WHITE)
 
 def test_sim_anneal_init(new_sim2, new_sim5):
    """Test initialisation of the simulated annealing class."""
@@ -71,28 +95,66 @@ def test_sim_anneal_new_trial_solution(new_sim5):
    # Test using provided start point
    new_x = new_sim5.new_trial_solution()
 
-def test_initial_temperature(new_test_sim, new_sim2):
+def test_set_initial_temperature(new_test_sim, new_test_sim_white, new_sim2, 
+                                 new_sim2_white, new_sim5, new_sim5_white):
    """Test initial temperature calculation."""
    np.random.seed(seed=1)
 
    # Kirkpatrick method
    assert new_test_sim.current_T == 10000
-   new_test_sim.initial_temp()
+   new_test_sim.set_initial_temp()
    assert round(new_test_sim.current_T*100)/100 == 2.56
 
    # White method
-   new_test_sim.initial_temp_mode = InitialTempMode.WHITE
-   new_test_sim.initial_temp()
-   assert round(new_test_sim.current_T*100)/100 == 0.44
+   assert new_test_sim_white.current_T == 10000
+   new_test_sim_white.set_initial_temp()
+   assert round(new_test_sim_white.current_T*100)/100 == 0.44
    
    # Kirkpatric method
    assert new_sim2.current_T == 10000
-   new_sim2.initial_temp()
+   new_sim2.set_initial_temp()
    assert round(new_sim2.current_T/10)*10 == 30
 
    # White method
-   new_sim2.initial_temp_mode = InitialTempMode.WHITE
-   new_sim2.initial_temp()
-   assert round(new_sim2.current_T) == 8
+   assert new_sim2_white.current_T == 10000
+   new_sim2_white.set_initial_temp()
+   assert round(new_sim2_white.current_T) == 8
+
+   # Commented for speed - fairly slow to run.
+   # # Kirkpatric method
+   # assert new_sim5.current_T == 10000
+   # new_sim5.set_initial_temp()
+   # assert round(new_sim5.current_T/10)*10 == 60
+
+   # # White method
+   # assert new_sim5_white.current_T == 10000
+   # new_sim5_white.set_initial_temp()
+   # assert round(new_sim5_white.current_T) == 9
+
+def test_acceptable_solution(new_sim2, new_sim5):
+   """Test the acceptable solution method."""
+   # Negative solutions always accepted
+   assert new_sim2.acceptable_solution(-1)
+   assert new_sim5.acceptable_solution(-1)
+
+   # Very large values not accepter
+   assert not new_sim2.acceptable_solution(10e10)
+   assert not new_sim5.acceptable_solution(10e10)
+
+   # Give p = 0.5 with T = 10000
+   sum_1 = 0
+   sum_2 = 0
+   runs = 500
+   for _ in range(runs):
+      if new_sim2.acceptable_solution(6931.47):
+         sum_1 += 1
+      if new_sim5.acceptable_solution(6931.47):
+         sum_2 += 1
+
+   print(sum_2/runs)
+   assert round(sum_1/runs*10)/10 == 0.5
+   assert round(sum_2/runs*10)/10 == 0.5
+
+   
 
 

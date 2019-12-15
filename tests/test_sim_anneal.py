@@ -107,42 +107,42 @@ def test_set_initial_temperature(new_test_sim, new_test_sim_white, new_sim2,
    assert new_test_sim.initial_T == 10e10
    assert new_test_sim.current_T == 10e10
    new_test_sim.set_initial_temp()
-   assert round(new_test_sim.initial_T*100)/100 == 2.56
+   assert round(new_test_sim.initial_T*100)/100 == 2.43
 
    # White method
    assert new_test_sim_white.current_T == 10e10
    assert new_test_sim_white.current_T == 10e10
    new_test_sim_white.set_initial_temp()
-   assert round(new_test_sim_white.initial_T*100)/100 == 0.44
+   assert round(new_test_sim_white.initial_T*100)/100 == 0.39
    
    # Kirkpatric method
    assert new_sim2.initial_T == 10e10
    assert new_sim2.current_T == 10e10
    new_sim2.set_initial_temp()
-   assert round(new_sim2.initial_T/10)*10 == 30
+   assert round(new_sim2.initial_T/10)*10 == 40
    assert new_sim2.initial_T == new_sim2.current_T
 
    # White method
    assert new_sim2_white.initial_T == 10e10
    assert new_sim2_white.current_T == 10e10
    new_sim2_white.set_initial_temp()
-   assert round(new_sim2_white.initial_T) == 8
+   assert round(new_sim2_white.initial_T) == 6
    assert new_sim2_white.initial_T == new_sim2_white.current_T
 
    # Commented for speed - fairly slow to run.
-   # # Kirkpatric method
-   # assert new_sim5.initial_T == 10e10
-   # assert new_sim5.current_T == 10e10
-   # new_sim5.set_initial_temp()
-   # assert round(new_sim5.initial_T/10)*10 == 60
-   # assert new_sim5.initial_T == new_sim5.current_T
+   # Kirkpatric method
+   assert new_sim5.initial_T == 10e10
+   assert new_sim5.current_T == 10e10
+   new_sim5.set_initial_temp()
+   assert round(new_sim5.initial_T/10)*10 == 50
+   assert new_sim5.initial_T == new_sim5.current_T
 
-   # # # White method
-   # assert new_sim5_white.initial_T == 10e10
-   # assert new_sim5_white.current_T == 10e10
-   # new_sim5_white.set_initial_temp()
-   # assert round(new_sim5_white.initial_T) == 9
-   # assert new_sim5_white.initial_T == new_sim5_white.current_T
+   # # White method
+   assert new_sim5_white.initial_T == 10e10
+   assert new_sim5_white.current_T == 10e10
+   new_sim5_white.set_initial_temp()
+   assert round(new_sim5_white.initial_T) == 11
+   assert new_sim5_white.initial_T == new_sim5_white.current_T
 
 def test_acceptable_solution(new_sim2, new_sim5):
    """Test the acceptable solution method."""
@@ -184,8 +184,8 @@ def test_run(new_sim2):
    np.random.seed(seed=1)
    new_sim2.max_evaluations = 200
    new_sim2.run()
-   assert round(new_sim2.initial_T) == 35
-   assert round(new_sim2.current_T) == 28
+   assert round(new_sim2.initial_T) == 30
+   assert round(new_sim2.current_T) == 25
 
    
 

@@ -1,4 +1,4 @@
-"""Perform Optimisation
+"""Implement optimisation methods
 
 Classes
 -------
@@ -9,8 +9,10 @@ SimAnneal - Class to perform Simulated Annealing optimisation
 """
 
 from optimiser import objective
+from optimiser.archive import Archive
 from enum import Enum
-import numpy as np
+import numpy as np 
+import copy
 
 class TrialMode(Enum):
    """Mode describing which trial update mode to use."""
@@ -73,7 +75,7 @@ class SimAnneal:
       self.max_evaluations = 10000 
 
       # Archive
-      self.archive = []
+      self.archive = Archive()
 
    def run(self):
       """Perform the optimisation."""
@@ -85,18 +87,26 @@ class SimAnneal:
 
       # Search up to 10000 objective function evaluations
       while self.objective.evaluations < self.max_evaluations:
+         # Display progress
+         progress_bar(self.objective.evaluations, self.max_evaluations)
+
          # Find a new acceptable solution
          f0 = self.objective.f(self.x)
          x1 = self.new_trial_solution()
-         while not self.acceptable_solution(self.objective.f(x1) - f0):
+         f1 = self.objective.f(x1)
+         while not self.acceptable_solution(f1 - f0):
             x1 = self.new_trial_solution()
+            f1 = self.objective.f(x1)
          self.x = x1 
 
          # Add new solution to archive 
-         self.archive.append(x1)
+         self.archive.add(x1, f1)
 
          # Update temperature following annealing schedule
          self.update_temperature()
+      
+      # Reset output from carriage return
+      print("")
       return self.x     
       
    def acceptable_solution(self, df):
@@ -127,19 +137,19 @@ class SimAnneal:
          raise ValueError('Incorrect starting point dimension for new trial.')
 
       # Simple diagonal (C) matrix update.
+      x_new = np.zeros((self.dimension,1))
       if self.trial_mode is TrialMode.BASIC:
-         x_new = x0
          for i in range(self.dimension):
-            # Sample new position until it is feasible
-            u_i = self.uniform_random(self.objective.x_min, self.objective.x_max)
-            x_new[i] = x0[i] + u_i
+            # Sample new feasible position from altered range
+            # This avoids wasted samples and result is the same.
+            x_min = max(self.objective.x_min, x0[i] + self.objective.x_min)
+            x_max = min(self.objective.x_max, x0[i] + self.objective.x_max)
+            x_new[i] = self.uniform_random(x_min=x_min, x_max=x_max)
             while not self.objective.is_feasible(x_new, i):
-               u_i = self.uniform_random(self.objective.x_min, self.objective.x_max)
-               x_new[i] = x0[i] + u_i
+               x_new[i] = self.uniform_random(x_min=x_min, x_max=x_max)
+
          self.trials += 1
-         return x_new
-      else:
-         return np.zeros((self.dimension, 1))
+      return x_new
 
    def update_temperature(self):
       """Update the annealing temperature."""
@@ -210,3 +220,10 @@ class SimAnneal:
       # Generate number
       x_range = x_max - x_min
       return (np.random.rand(dim,1)*x_range) + x_min   
+
+def progress_bar(value, max_value, scale=15):
+   """Print a progress bar utilising the carriage return function."""
+   progress = round(value/max_value*scale)
+   remaining = scale - progress
+   print('\rOptimisation Progress: ' + "+"*progress + "-"*remaining, end="")
+   

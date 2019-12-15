@@ -29,17 +29,26 @@ class SimAnneal:
    Parameters
    ----------
    objective   - Objective class describing function to be optimised.
+   trial_mode - The method used for selecting new trial solutions. 
+   initial_temp_mode - The method used to select the initial temperature. 
 
    Public Methods
    -------------- 
-   new_trial_solution - Return a new trial solution based upon trial mode. 
-   uniform_random - Return 1D sample from uniform variable in range
-                    x_min, x_max. 
-   initial_temp - Set the initial temperature. 
+   run - Perform the optimisation. 
+   acceptable_solution - Implements solution acceptance criteria for 
+                           simulated annealing.
+   new_trial_solution  - Return a new trial solution based upon trial mode. 
+   update_temperature  - Update the annealing temperature. 
+   set_initial_temp    - Set the initial temperature based upon initial 
+                           temperature mode. 
+   uniform_random      - Return 1D sample from uniform variable in range
+                           x_min, x_max.  
    """
 
    def __init__(self, objective, trial_mode, initial_temp_mode):
-      """Initialise the optimiser."""
+      """Initialise the optimiser.
+         trial_mode        - Defines how the trial solutions are generated.
+         initial_temp_mode - Defines how initial temperature is set."""
       # Check input arguments
       if type(trial_mode) != TrialMode:
          raise ValueError('Trial Mode not recognised.')
@@ -56,7 +65,11 @@ class SimAnneal:
       self.x = np.zeros((self.dimension, 1)) # Sample point
 
       # Annealing schedule
-      self.current_T = 10000
+      self.initial_T = 10e10
+      self.current_T = 10e10
+      self.trials = 0 # Total length of chain
+      self.acceptances = 0 # Total number of acceptances
+      self.decrement_length = 100
       self.max_evaluations = 10000 
 
    def run(self):
@@ -82,22 +95,25 @@ class SimAnneal:
       
    def acceptable_solution(self, df):
       """Return True if solution decreases objective function, or based
-         on acceptance probability if f increases. Else, return False."""
+         on acceptance probability if f increases. Else, return False.
+         df - The change in objective function value for solution."""
       if df < 0:
          # Always accept if f decreases.
+         self.acceptances += 1
          return True
       else:
          p_accept = np.exp(-1*df/self.current_T)
          sample = self.uniform_random(0,1)
          if sample <= p_accept:
+            self.acceptances += 1
             return True
          else:
             return False
 
    def new_trial_solution(self, x0=None):
       """Return new trial solution following trial mode.
-         If given, x0 is used as starting point for the new trial x.
-         Otherwise, current self.x value is used."""      
+         x0 - Starting point for the new trial x. If x0 is not provided,
+               the current self.x value is used."""      
       # Set start point if none provided.
       if x0 is None:
          x0 = self.x
@@ -114,16 +130,19 @@ class SimAnneal:
             while not self.objective.is_feasible(x_new, i):
                u_i = self.uniform_random(self.objective.x_min, self.objective.x_max)
                x_new[i] = x0[i] + u_i
+         self.trials += 1
          return x_new
       else:
          return np.zeros((self.dimension, 1))
 
    def update_temperature(self):
       """Update the annealing temperature."""
+      # Implement basic length based decrement. 
+      self.current_T = self.initial_T*0.95**(self.trials // self.decrement_length)
       return
 
    def set_initial_temp(self):
-      """Set the initial temperature.
+      """Set the initial temperature based upon initial_temp_mode:
          Kirkpatrick [1984] - Set T0 so av. prob. of solution increasing f
          is ~0.8.
          White [1984] - Set T0 = sigma where sigma issd of variation in 
@@ -157,13 +176,15 @@ class SimAnneal:
       # Set T0 based on mode. 
       if self.initial_temp_mode is InitialTempMode.KIRKPATRICK:
          # Set T to be average
-         self.current_T = -1*np.mean(df_samples)/np.log(0.8)
+         self.initial_T = -1*np.mean(df_samples)/np.log(0.8)
       elif self.initial_temp_mode is InitialTempMode.WHITE:
          # Calculate sd of samples
-         self.current_T = np.std(df_samples) 
+         self.initial_T = np.std(df_samples) 
+      self.current_T = self.initial_T
       
    def uniform_random(self, x_min, x_max):
-      """Return 1D sample from scaled uniform random variable."""
+      """Return 1D sample from scaled uniform random variable.
+         [x_min, x_max] form the range for generated numbers."""
       if x_min >= x_max:
          raise ValueError("Incorrect random number range.")
 

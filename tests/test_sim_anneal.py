@@ -89,11 +89,14 @@ def test_sim_anneal_new_trial_solution(new_sim5):
    # Check class 
    assert all([a == b for a, b in zip(new_sim5.x, np.zeros((5,1)))])
    # Test starting point using class start point. 
+   assert new_sim5.trials == 0
    new_x = new_sim5.new_trial_solution()
    assert all([a != b for a, b in zip(new_x, np.zeros((5,1)))])
+   assert new_sim5.trials == 1
 
    # Test using provided start point
-   new_x = new_sim5.new_trial_solution()
+   new_x = new_sim5.new_trial_solution([0,0,0,0,0])
+   assert new_sim5.trials == 2
 
 def test_set_initial_temperature(new_test_sim, new_test_sim_white, new_sim2, 
                                  new_sim2_white, new_sim5, new_sim5_white):
@@ -101,35 +104,45 @@ def test_set_initial_temperature(new_test_sim, new_test_sim_white, new_sim2,
    np.random.seed(seed=1)
 
    # Kirkpatrick method
-   assert new_test_sim.current_T == 10000
+   assert new_test_sim.initial_T == 10e10
+   assert new_test_sim.current_T == 10e10
    new_test_sim.set_initial_temp()
-   assert round(new_test_sim.current_T*100)/100 == 2.56
+   assert round(new_test_sim.initial_T*100)/100 == 2.56
 
    # White method
-   assert new_test_sim_white.current_T == 10000
+   assert new_test_sim_white.current_T == 10e10
+   assert new_test_sim_white.current_T == 10e10
    new_test_sim_white.set_initial_temp()
-   assert round(new_test_sim_white.current_T*100)/100 == 0.44
+   assert round(new_test_sim_white.initial_T*100)/100 == 0.44
    
    # Kirkpatric method
-   assert new_sim2.current_T == 10000
+   assert new_sim2.initial_T == 10e10
+   assert new_sim2.current_T == 10e10
    new_sim2.set_initial_temp()
-   assert round(new_sim2.current_T/10)*10 == 30
+   assert round(new_sim2.initial_T/10)*10 == 30
+   assert new_sim2.initial_T == new_sim2.current_T
 
    # White method
-   assert new_sim2_white.current_T == 10000
+   assert new_sim2_white.initial_T == 10e10
+   assert new_sim2_white.current_T == 10e10
    new_sim2_white.set_initial_temp()
-   assert round(new_sim2_white.current_T) == 8
+   assert round(new_sim2_white.initial_T) == 8
+   assert new_sim2_white.initial_T == new_sim2_white.current_T
 
    # Commented for speed - fairly slow to run.
    # # Kirkpatric method
-   # assert new_sim5.current_T == 10000
+   # assert new_sim5.initial_T == 10e10
+   # assert new_sim5.current_T == 10e10
    # new_sim5.set_initial_temp()
-   # assert round(new_sim5.current_T/10)*10 == 60
+   # assert round(new_sim5.initial_T/10)*10 == 60
+   # assert new_sim5.initial_T == new_sim5.current_T
 
-   # # White method
-   # assert new_sim5_white.current_T == 10000
+   # # # White method
+   # assert new_sim5_white.initial_T == 10e10
+   # assert new_sim5_white.current_T == 10e10
    # new_sim5_white.set_initial_temp()
-   # assert round(new_sim5_white.current_T) == 9
+   # assert round(new_sim5_white.initial_T) == 9
+   # assert new_sim5_white.initial_T == new_sim5_white.current_T
 
 def test_acceptable_solution(new_sim2, new_sim5):
    """Test the acceptable solution method."""
@@ -138,22 +151,33 @@ def test_acceptable_solution(new_sim2, new_sim5):
    assert new_sim5.acceptable_solution(-1)
 
    # Very large values not accepter
-   assert not new_sim2.acceptable_solution(10e10)
-   assert not new_sim5.acceptable_solution(10e10)
+   assert not new_sim2.acceptable_solution(10e20)
+   assert not new_sim5.acceptable_solution(10e20)
 
    # Give p = 0.5 with T = 10000
    sum_1 = 0
    sum_2 = 0
-   runs = 500
+   runs = 10000
    for _ in range(runs):
-      if new_sim2.acceptable_solution(6931.47):
+      if new_sim2.acceptable_solution(6.93147e10):
          sum_1 += 1
-      if new_sim5.acceptable_solution(6931.47):
+      if new_sim5.acceptable_solution(6.93147e10):
          sum_2 += 1
-
-   print(sum_2/runs)
    assert round(sum_1/runs*10)/10 == 0.5
+   assert round(new_sim2.acceptances/1000)*1000 == 5000
    assert round(sum_2/runs*10)/10 == 0.5
+   assert round(new_sim5.acceptances/1000)*1000 == 5000
+
+def test_temperature_update(new_sim2, new_sim5):
+   """Test temperature decrement."""
+   assert new_sim2.current_T == 10e10
+   new_sim2.update_temperature()
+   assert new_sim2.current_T == 10e10
+
+   for _ in range(new_sim2.decrement_length):
+      new_sim2.new_trial_solution([0,0])
+   new_sim2.update_temperature()
+   assert new_sim2.current_T == 9.5e10
 
    
 

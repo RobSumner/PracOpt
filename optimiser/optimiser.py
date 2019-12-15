@@ -72,13 +72,19 @@ class SimAnneal:
       self.decrement_length = 100
       self.max_evaluations = 10000 
 
+      # Archive
+      self.archive = []
+
    def run(self):
       """Perform the optimisation."""
       # Set the initial temperature for process.
       self.set_initial_temp()
 
+      # Set random start point
+      self.x = self.uniform_random(dim=self.dimension)
+
       # Search up to 10000 objective function evaluations
-      while self.objective.evaulations < self.max_evaluations:
+      while self.objective.evaluations < self.max_evaluations:
          # Find a new acceptable solution
          f0 = self.objective.f(self.x)
          x1 = self.new_trial_solution()
@@ -87,10 +93,10 @@ class SimAnneal:
          self.x = x1 
 
          # Add new solution to archive 
+         self.archive.append(x1)
 
          # Update temperature following annealing schedule
          self.update_temperature()
-
       return self.x     
       
    def acceptable_solution(self, df):
@@ -153,11 +159,10 @@ class SimAnneal:
       
       # Calculate T0 following White/Kirkpatrick
       samples = 100
-      x_range = self.objective.x_max - self.objective.x_min
       df_samples = np.zeros((samples,1))
       for i in range(samples):
          # Random starting point in range [-2,2]
-         x0 = np.random.rand(self.dimension, 1)*x_range + self.objective.x_min
+         x0 = self.uniform_random(dim=self.dimension)
          f0 = self.objective.f(x0)
          
          # Accept any move which increase value of f.  
@@ -180,13 +185,28 @@ class SimAnneal:
       elif self.initial_temp_mode is InitialTempMode.WHITE:
          # Calculate sd of samples
          self.initial_T = np.std(df_samples) 
-      self.current_T = self.initial_T
       
-   def uniform_random(self, x_min, x_max):
-      """Return 1D sample from scaled uniform random variable.
-         [x_min, x_max] form the range for generated numbers."""
+      # Store current temp as initial temp
+      self.current_T = self.initial_T
+
+      # Resent number of evaluations to 0 
+      self.objective.reset()
+      
+   def uniform_random(self, x_min=None, x_max=None, dim=1):
+      """Return nD sample from scaled uniform random variable.
+         [x_min, x_max] - The range for generated numbers. This defaults
+                           to the provided objective function values. 
+         dim            - Dimension of random sample to be generated."""
+      # Set default values
+      if x_min is None:
+         x_min = self.objective.x_min
+      if x_max is None:
+         x_max = self.objective.x_max
+
+      # Check the range of values. 
       if x_min >= x_max:
          raise ValueError("Incorrect random number range.")
 
+      # Generate number
       x_range = x_max - x_min
-      return (np.random.rand()*x_range) + x_min   
+      return (np.random.rand(dim,1)*x_range) + x_min   

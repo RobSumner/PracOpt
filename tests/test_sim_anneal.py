@@ -168,7 +168,7 @@ def test_acceptable_solution(new_sim2, new_sim5):
    assert round(sum_2/runs*10)/10 == 0.5
    assert round(new_sim5.acceptances/1000)*1000 == 5000
 
-def test_temperature_update(new_sim2, new_sim5):
+def test_temperature_update(new_sim2):
    """Test temperature decrement."""
    assert new_sim2.current_T == 10e10
    new_sim2.update_temperature()
@@ -178,6 +178,14 @@ def test_temperature_update(new_sim2, new_sim5):
       new_sim2.new_trial_solution([0,0])
    new_sim2.update_temperature()
    assert new_sim2.current_T == 9.5e10
+
+def test_run(new_sim2):
+   """Test the run function for 200 evaluations."""
+   np.random.seed(seed=1)
+   new_sim2.max_evaluations = 200
+   new_sim2.run()
+   assert round(new_sim2.initial_T) == 35
+   assert round(new_sim2.current_T) == 28
 
    
 

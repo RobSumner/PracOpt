@@ -33,7 +33,9 @@ class Archive:
    """
 
    def __init__(self, length=20):
-      """Initialise the optimiser."""
+      """Initialise the optimiser.
+         Parameters:
+         length - The length L of the L dissimilarity archive."""
       self.all_x_values = [] # Sample points
       self.all_f_values = []  # Objective function values.
       self.all_time_track = [] # Iteration & time of archiving
@@ -45,7 +47,11 @@ class Archive:
    
    def add(self, x, f, iteration):
       """Store current values in storage of all solutions and employ
-         Best L-dissimilarity archiving scheme."""
+         Best L-dissimilarity archiving scheme.
+         Parameters:
+         x - Current x sample point. 
+         f - Current objective function value. 
+         iteration - Current evaluation iteration."""
       if not isinstance(x, np.ndarray):
          x = np.array([x])
       self.all_x_values.append(x)
@@ -94,9 +100,9 @@ class Archive:
 
    def results(self):
       """Convert stored data into a usable format.
-         Returns L_samples and all_samples:
-         L_samples   - From L dissimilarity archive, one row per sample.
-                     - Row:[sample point, objective value]
+         Returns:
+         L_samples - From L dissimilarity archive, one row per sample.
+                   - Row:[sample point, objective value]
          all_samples - Every sample recorded, one row per sample.
                      - Row:[sample point, objective value, evaluation, time]
                      - Evaluation Iteration may not increase evenly as it is 
@@ -115,10 +121,16 @@ class Archive:
       return L_samples, all_samples
 
    def objective_data(self, max_iter):
-      """Return a max_iter x 3 array of interpolated objective function
-         values during the current search. 
-         Array row = [evaluation iteration, time, function value]
-         This is used to compare between methods."""
+      """Function to summarise objective function data in a usable form.
+         This can be used to compare between methods. 
+         Parameters:
+         max_iter - Number of iterations that data should be to extrapolates
+                    or interpolated to fit.
+         Returns:
+         data - A [max_iter x 3] array of interpolated objective function
+                values during the current search. 
+              - Array row = [evaluation iteration, time, function value]
+               """
       n = len(self.all_x_values)
       f_data = np.reshape(np.array(self.all_f_values), (n,1))
       time = np.reshape(np.array(self.all_time_track), (n,2))
@@ -150,7 +162,11 @@ class Archive:
 
    def most_similar(self, point):
       """Find the point which is most similar in the archive.
-         Returns the similarity value and index of the point in the archive."""
+         Parameters:
+         point - Sample point to compare elements of the archive to. 
+         Returns:
+         min_sim - The lowest similarity value found in the archive.
+         index - Index of the archive element with this similarity value."""
       if len(self.L_x_values) == 0:
          return None, None
 
@@ -165,7 +181,12 @@ class Archive:
 
    def similarity(self, point_1, point_2):
       """Find the similarity between two points, based upon a l2-norm 
-         similarity measure."""
+         similarity measure.
+         Parameters:
+         point_1, point_2 - Two points to be compared. 
+                          - Order does not matter.
+         Returns:
+         similarity - l2 norm of vector between points."""
       # Convert into numpy arrays if not currently.
       if not isinstance(point_1, np.ndarray): point_1 = np.array([point_1])
       if not isinstance(point_2, np.ndarray): point_2 = np.array([point_2])

@@ -12,16 +12,19 @@ class Shubert:
    """n dimensional Shubert function
    Parameters
    ----------
-   n    - Dimension of the function. 
+   n - Dimension of the function. 
 
    Public Methods
    --------------
-   is_feasible(x) - Returns True if point x is feasible or False if not. 
-   f(x)  - Returns value of objective function at point x. 
+   is_feasible - Returns True if point x is feasible or False if not. 
+   f - Returns value of objective function at point x. 
+   reset - Reset variable parameters. 
    """
 
    def __init__(self, n):
-      """Initialise Shubert function properties."""
+      """Initialise Shubert function properties.
+         Parameters:
+         n - Dimension of the function."""
       if type(n) is not int or n <= 0:
          raise ValueError('Dimension must be integer greater than 0.')
       self.n = n
@@ -31,9 +34,13 @@ class Shubert:
       self.evaluations = 0
 
    def is_feasible(self, x, index=None):
-      """Returns true if point x is feasible.
-         If index is supplied, the coordinate with this
-         index is checked for feasibility."""
+      """Check feasibility of a point. 
+         Parameters:
+         x - Point to be checked.
+         index - If supplied, the specific component x[index] is checked only.
+               - If None supplied (default) the whole vector x is checked.
+         Returns:
+         Bool - True if feasible, False if not."""
       # Check the input variable
       size = 1
       for dim in np.shape(x): size *= dim
@@ -52,7 +59,11 @@ class Shubert:
       return True
 
    def f(self, x):
-      """Return value of Shubert function at point x."""
+      """Evaluate objective function at point.
+         Parameters:
+         x - Point to evaluate function at.
+         Returns:
+         Float - Value of objective function at point."""
       if not self.is_feasible(x):
          raise ValueError("Point x must lie in feaisble region.")
 

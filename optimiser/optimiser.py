@@ -36,7 +36,8 @@ class SimAnneal:
 
    Public Methods
    -------------- 
-   run - Perform the optimisation. 
+   run - Perform the optimisation.
+   reset - Reset all variable parameters, storage and classes.  
    acceptable_solution - Implements solution acceptance criteria for 
                            simulated annealing.
    new_trial_solution  - Return a new trial solution based upon trial mode. 
@@ -49,7 +50,8 @@ class SimAnneal:
 
    def __init__(self, objective, trial_mode, initial_temp_mode):
       """Initialise the optimiser.
-         trial_mode        - Defines how the trial solutions are generated.
+         Parameters:
+         trial_mode - Defines how the trial solutions are generated.
          initial_temp_mode - Defines how initial temperature is set."""
       # Check input arguments
       if type(trial_mode) != TrialMode:
@@ -100,19 +102,38 @@ class SimAnneal:
          self.x = x1 
 
          # Add new solution to archive 
-         self.archive.add(x1, f1)
+         self.archive.add(x1, f1, self.objective.evaluations)
 
          # Update temperature following annealing schedule
          self.update_temperature()
       
       # Reset output from carriage return
-      print("")
-      return self.x     
+      print("") 
+
+   def reset(self):
+      """Reset variable parameters and sub-classes."""
+      # Point, Objective value & change in objective.
+      self.x = np.zeros((self.dimension, 1)) # Sample point
+
+      # Annealing schedule
+      self.initial_T = 10e10
+      self.current_T = 10e10
+      self.trials = 0 # Total length of chain
+      self.acceptances = 0 # Total number of acceptances
+
+      # Reset archive & objective
+      self.archive.reset()
+      self.objective.reset()
       
    def acceptable_solution(self, df):
-      """Return True if solution decreases objective function, or based
-         on acceptance probability if f increases. Else, return False.
-         df - The change in objective function value for solution."""
+      """Return True if solution decreases objective function.
+         If objective function increases, return true following the 
+         simulated annealing acceptance probability. 
+         Random number generation is used to implement random acceptance.
+         Parameters:
+         df - The change in objective function value for solution.
+         Returns:
+         Bool - Describing if solution should be accepted."""
       if df < 0:
          # Always accept if f decreases.
          self.acceptances += 1
@@ -128,8 +149,11 @@ class SimAnneal:
 
    def new_trial_solution(self, x0=None):
       """Return new trial solution following trial mode.
+         Parameters:
          x0 - Starting point for the new trial x. If x0 is not provided,
-               the current self.x value is used."""      
+               the current self.x value is used.
+         Returns:
+         x_new - New trial position of same dimension as input x0."""      
       # Set start point if none provided.
       if x0 is None:
          x0 = self.x
@@ -159,10 +183,14 @@ class SimAnneal:
 
    def set_initial_temp(self):
       """Set the initial temperature based upon initial_temp_mode:
-         Kirkpatrick [1984] - Set T0 so av. prob. of solution increasing f
-         is ~0.8.
-         White [1984] - Set T0 = sigma where sigma issd of variation in 
-         objective function during initial search."""
+         KIRKPATRIC - Based on Kirkpatrick [1984] 
+                    - Set T0 so av. prob. of solution increasing f
+                      is ~0.8.
+         WHITE - Based on White [1984] 
+               - Set T0 = sigma where sigma issd of variation in 
+                 objective function during initial search.
+         PRESET - Use a constant value preset in the class.
+                - Default value is 10e10 in this case."""
       if self.initial_temp_mode is InitialTempMode.PRESET:
          # Temp already set in class - no calculation needed.
          return
@@ -204,9 +232,13 @@ class SimAnneal:
       
    def uniform_random(self, x_min=None, x_max=None, dim=1):
       """Return nD sample from scaled uniform random variable.
+         Parameters:
          [x_min, x_max] - The range for generated numbers. This defaults
                            to the provided objective function values. 
-         dim            - Dimension of random sample to be generated."""
+         dim - Dimension of random sample to be generated.
+         Returns:
+         x - Randomly generated number or array of numbers of dimension dim.
+         """
       # Set default values
       if x_min is None:
          x_min = self.objective.x_min
@@ -221,9 +253,13 @@ class SimAnneal:
       x_range = x_max - x_min
       return (np.random.rand(dim,1)*x_range) + x_min   
 
-def progress_bar(value, max_value, scale=15):
-   """Print a progress bar utilising the carriage return function."""
-   progress = round(value/max_value*scale)
-   remaining = scale - progress
+def progress_bar(value, max_value, width=15):
+   """Print a progress bar utilising the carriage return function.
+      value - Number representing the current progress of process.
+      Parameters:
+      max_value - Maximum possible value in process 
+      width - Number of characters in the progress bar."""
+   progress = round(value/max_value*width)
+   remaining = width - progress
    print('\rOptimisation Progress: ' + "+"*progress + "-"*remaining, end="")
    

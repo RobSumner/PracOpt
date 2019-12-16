@@ -17,7 +17,7 @@ import copy
 class TrialMode(Enum):
    """Mode describing which trial update mode to use."""
    BASIC = 1
-   CHOLESKY = 2
+   VANDERBILT = 2
    PARKS = 3
 
 class InitialTempMode(Enum):
@@ -67,6 +67,11 @@ class SimAnneal:
 
       # Point, Objective value & change in objective.
       self.x = np.zeros((self.dimension, 1)) # Sample point
+
+      # Trial solutions
+      self.alpha = 0.1
+      self.omega = 2.1
+      self.Q_matrix = np.zeros((self.dimension, self.dimension))
 
       # Annealing schedule
       self.initial_T = 10e10
@@ -125,6 +130,9 @@ class SimAnneal:
       self.archive.reset()
       self.objective.reset()
       
+      # Reset trial update parameters
+      self.Q_matrix = np.zeros((self.dimension, self.dimension))
+
    def acceptable_solution(self, df):
       """Return True if solution decreases objective function.
          If objective function increases, return true following the 
@@ -157,9 +165,14 @@ class SimAnneal:
       # Set start point if none provided.
       if x0 is None:
          x0 = self.x
-      elif len(x0) != self.dimension:
-         raise ValueError('Incorrect starting point dimension for new trial.')
-
+      # x0 must be numpy array of correct size
+      if not isinstance(x0, np.ndarray):
+         x0 = np.array(x0)
+      try:
+         x0 = np.reshape(np.array(x0), (self.dimension, 1))
+      except ValueError:
+         raise ValueError('Incorrect starting point shape for new trial.')
+         
       # Simple diagonal (C) matrix update.
       x_new = np.zeros((self.dimension,1))
       if self.trial_mode is TrialMode.BASIC:
@@ -172,7 +185,40 @@ class SimAnneal:
             while not self.objective.is_feasible(x_new, i):
                x_new[i] = self.uniform_random(x_min=x_min, x_max=x_max)
 
-         self.trials += 1
+      # Vanderbilt and Louie method [1984]
+      elif self.trial_mode is TrialMode.VANDERBILT:
+         # Calculate covariance matrix of path to this point.
+         n = len(self.archive.all_x_values)
+         if n > 1:
+            path = np.reshape(np.array(self.archive.all_x_values), (n,self.dimension))
+            path_cov = np.cov(path.T)
+         else:
+            path_cov = np.eye(self.dimension)
+
+         # Update generator matrix
+         S_matrix = self.Q_matrix*self.Q_matrix.T
+         S_matrix = (1 - self.alpha)*S_matrix + self.alpha*self.omega*path_cov
+         self.Q_matrix = np.linalg.cholesky(S_matrix)
+
+         # Dynamically set sampling range to minimise samples required.
+         row_norm_Q = np.linalg.norm(self.Q_matrix, 1, axis=1)
+         x_min = self.objective.x_min
+         x_max = self.objective.x_max
+         range_vals = (self.x - self.objective.x_min) / \
+                        np.reshape(row_norm_Q, (self.dimension,1))
+         # Limit range if largest required interval is smaller than root 3. 
+         bound = min(max(range_vals), np.sqrt(3))
+         
+         # Sample until feasible
+         u = self.uniform_random(x_min=-1*bound, x_max=bound, dim=self.dimension)
+         x_new = x0 + np.matmul(self.Q_matrix, u)
+         print(x0)
+         print(np.matmul(self.Q_matrix, u))
+         while not self.objective.is_feasible(x_new):
+            u = self.uniform_random(x_min=-1*bound, x_max=bound, dim=self.dimension)
+            x_new = x0 + np.matmul(self.Q_matrix, u)
+
+      self.trials += 1
       return x_new
 
    def update_temperature(self):

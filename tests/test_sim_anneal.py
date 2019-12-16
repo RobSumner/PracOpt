@@ -30,6 +30,13 @@ def new_sim2():
    return SimAnneal(obj, TrialMode.BASIC, InitialTempMode.KIRKPATRICK)
 
 @pytest.fixture
+def new_sim2_vanderbilt():
+   """Return a new instance of the simulated annealing class
+      with 2D Shubert objective function."""
+   obj = Shubert(2)
+   return SimAnneal(obj, TrialMode.VANDERBILT, InitialTempMode.KIRKPATRICK)
+
+@pytest.fixture
 def new_sim2_white():
    """Return a new instance of the simulated annealing class
       with 2D Shubert objective function."""
@@ -81,7 +88,7 @@ def test_sim_anneal_rand(new_sim5, new_test_sim):
    samples = samples[samples > 0]
    assert round(np.mean(samples)*100)/100 == 1
 
-def test_sim_anneal_new_trial_solution(new_sim5):
+def test_new_basic_trial_solution(new_sim5):
    """Test new trial proposal method."""
    # Check class 
    assert all([a == b for a, b in zip(new_sim5.x, np.zeros((5,1)))])
@@ -92,8 +99,25 @@ def test_sim_anneal_new_trial_solution(new_sim5):
    assert new_sim5.trials == 1
 
    # Test using provided start point
+   with pytest.raises(ValueError):
+      # (3,1) not (5,1)
+      new_x = new_sim5.new_trial_solution([[0],[0],[0]])
    new_x = new_sim5.new_trial_solution([0,0,0,0,0])
    assert new_sim5.trials == 2
+
+def test_new_vanderbilt_trial_solution(new_sim2_vanderbilt):
+   """Test new trial proposal method."""
+   # Check class 
+   assert all([a == b for a, b in zip(new_sim2_vanderbilt.x, np.zeros((2,1)))])
+   # Test starting point using class start point. 
+   assert new_sim2_vanderbilt.trials == 0
+   new_x = new_sim2_vanderbilt.new_trial_solution()
+   assert all([a != b for a, b in zip(new_x, np.zeros((2,1)))])
+   assert new_sim2_vanderbilt.trials == 1
+
+   # Test using provided start point
+   new_x = new_sim2_vanderbilt.new_trial_solution([[0],[0]])
+   assert new_sim2_vanderbilt.trials == 2
 
 def test_set_initial_temperature(new_test_sim, new_test_sim_white, new_sim2, 
                                  new_sim2_white, new_sim5, new_sim5_white):
@@ -172,17 +196,25 @@ def test_temperature_update(new_sim2):
    assert new_sim2.current_T == 10e10
 
    for _ in range(new_sim2.decrement_length):
-      new_sim2.new_trial_solution([0,0])
+      new_sim2.new_trial_solution([[0],[0]])
    new_sim2.update_temperature()
    assert new_sim2.current_T == 9.5e10
 
-def test_run(new_sim2):
+def test_run_reset(new_sim2):
    """Test the run function for 200 evaluations."""
    np.random.seed(seed=1)
    new_sim2.max_evaluations = 200
    new_sim2.run()
    assert round(new_sim2.initial_T) == 30
    assert round(new_sim2.current_T) == 25
+
+   new_sim2.reset()
+   assert all([a == b for a, b in zip(new_sim2.x, np.zeros((2,1)))])
+   assert new_sim2.initial_T == 10e10
+   assert new_sim2.current_T == 10e10 
+   assert new_sim2.trials == 0
+   assert new_sim2.acceptances == 0 
+   assert np.sum(new_sim2.Q_matrix) == 0 
 
 def test_evaluate(new_sim2):
    """Test the evaluation function."""

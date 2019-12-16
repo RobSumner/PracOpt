@@ -8,22 +8,28 @@ from optimiser.archive import Archive
 def new_arch():
    """Return an archive populated with constant f results."""
    arch = Archive()
+   arch.D_min = 0.1
+   arch.D_sim = 0.01
    for i in range(100):
-      arch.add(np.array([i]), 100)
+      arch.add(np.array([i]), 100, i)
    return arch
 
 @pytest.fixture
 def new_arch2():
    """Return an archive populated with non constant f results."""
    arch = Archive()
+   arch.D_min = 0.1
+   arch.D_sim = 0.01
    for i in range(100):
-      arch.add(np.array([i]), i)
+      arch.add(np.array([i]), i, i)
    return arch
 
 @pytest.fixture
 def new_arch3():
    """Return an archive with artificially populated L archive."""
    arch = Archive()
+   arch.D_min = 0.1
+   arch.D_sim = 0.01
    arch.L_x_values = [np.array([1,1]), np.array([1,2]), np.array([3,1])]
    arch.L_f_values = [1, 2, 3]
    return arch
@@ -31,16 +37,21 @@ def new_arch3():
 def test_archive_init():
    """Test archive initialisation"""
    arch = Archive()
-   assert len(arch.all_obj_values) == 0
+   assert len(arch.all_f_values) == 0
    assert len(arch.all_x_values) == 0
+   assert len(arch.all_time_track) == 0
+   assert len(arch.L_x_values) == 0
+   assert len(arch.L_f_values) == 0
 
-def test_archive_add(new_arch, new_arch2, new_arch4):
+def test_archive_add(new_arch, new_arch2):
    """Test the storage methods for archive."""
-   assert len(new_arch.all_obj_values) == 100
+   assert len(new_arch.all_f_values) == 100
+   assert len(new_arch.all_time_track) == 100
    assert len(new_arch.all_x_values) == 100
 
-   new_arch.add(-1,-1)
-   assert len(new_arch.all_obj_values) == 101
+   new_arch.add(-1,-1,-1)
+   assert len(new_arch.all_f_values) == 101
+   assert len(new_arch.all_time_track) == 101
    assert len(new_arch.all_x_values) == 101
 
    # Test the L dissimilarity archive
@@ -51,12 +62,39 @@ def test_archive_add(new_arch, new_arch2, new_arch4):
 
 def test_archive_results(new_arch):
    """Test the results method for archive."""
-   results = new_arch.results()
-   shape = results.shape
-   print(results)
-   assert shape[0] == 100
-   assert shape[1] == 2
+   l, samples = new_arch.results()
+   shape1 = samples.shape
+   assert shape1[0] == 100
+   assert shape1[1] == 4
+   shape2 = l.shape
+   assert shape2[0] == 20
+   assert shape2[1] == 2
 
+def test_archive_objective_data(new_arch):
+   """Test method for interpolating function values."""
+   data = new_arch.objective_data(110)
+   shape = data.shape
+   assert shape[0] == 110
+   assert shape[1] == 3
+   assert sum(data[:,2]) == 110*100
+   assert data[-1,0] == 110
+
+def test_archive_reset(new_arch2):
+   """Test the reset method for archive."""
+   assert len(new_arch2.all_x_values) == 100
+   assert len(new_arch2.all_f_values) == 100
+   assert len(new_arch2.all_time_track) == 100
+   assert len(new_arch2.L_x_values) == 20
+   assert len(new_arch2.L_f_values) == 20
+
+   new_arch2.reset()
+
+   assert len(new_arch2.all_x_values) == 0
+   assert len(new_arch2.all_f_values) == 0
+   assert len(new_arch2.all_time_track) == 0
+   assert len(new_arch2.L_x_values) == 0
+   assert len(new_arch2.L_f_values) == 0
+   
 
 @pytest.mark.parametrize("point_1, point_2, value", 
       [([1], [1], 0),

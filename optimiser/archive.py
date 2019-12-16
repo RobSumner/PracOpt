@@ -6,6 +6,8 @@ Archive - Class to act as archive or storage method for optimsation.
 """
 
 import numpy as np
+import time
+from scipy.interpolate import CubicSpline
 
 class Archive:
    """Storage method for optimisation. 
@@ -15,29 +17,40 @@ class Archive:
 
    Public Methods
    -------------- 
-   add      - Add values to the archive. x is a sample point and f is objective
-               function value at this point. 
-   results  - Return results as an numpy array that can be used for plotting. 
-               Each row of array is (x_point, f). 
+   add - Add values to the archive. x is a sample point and f is objective
+         function value at this point. 
+   results - Return dissimilarity archive and all sample results as an numpy array 
+             that can be used for plotting. 
+   objective_data - For argument max_iter, return a [max_iter x 3] array of 
+                    interpolated f and time values for linearly spaced 
+                    iterations in range 1:1:max_iter.
+                  - This can be used for comparison between methods. 
+   reset - Reset variable parameters in the archive.
+   most_similar - Identify the archive element most similar to point.
+                - Returns similarity, index
+                - Note a small similarity measure indicates similar points. 
+   similarity - Returns the l2 norm similarity measure for two points.
    """
 
    def __init__(self, length=20):
       """Initialise the optimiser."""
-      self.all_x_values = []
-      self.all_obj_values = []
+      self.all_x_values = [] # Sample points
+      self.all_f_values = []  # Objective function values.
+      self.all_time_track = [] # Iteration & time of archiving
       self.L_length = length # Length of L dissimilarity archive.
       self.L_x_values = [] # L dissimilarity x values
       self.L_f_values = [] # L dissimilarity f values
-      self.D_min = 0.1  # Minimum dissimilarity for all elements
-      self.D_sim = 0.01 # Minimum dissimilarity to worst element
+      self.D_min = 0.25  # Minimum dissimilarity for all elements
+      self.D_sim = 0.025 # Minimum dissimilarity to worst element
    
-   def add(self, x, f):
+   def add(self, x, f, iteration):
       """Store current values in storage of all solutions and employ
          Best L-dissimilarity archiving scheme."""
       if not isinstance(x, np.ndarray):
          x = np.array([x])
       self.all_x_values.append(x)
-      self.all_obj_values.append(f)
+      self.all_f_values.append(f)
+      self.all_time_track.append(np.array([iteration, time.process_time()]))
 
       if len(self.L_x_values) > 0:
          # Worst and Best current solution indices
@@ -51,7 +64,7 @@ class Archive:
          self.L_x_values.append(x)
          self.L_f_values.append(f)
          return
-         
+
       elif len(self.L_x_values) < self.L_length and lowest_sim_val > self.D_min:
          # Store if archive not full and point is sufficiently 
          # dissimilar to all current entries.
@@ -80,12 +93,60 @@ class Archive:
       return
 
    def results(self):
-      """Convert stored data into a usable format."""
+      """Convert stored data into a usable format.
+         Returns L_samples and all_samples:
+         L_samples   - From L dissimilarity archive, one row per sample.
+                     - Row:[sample point, objective value]
+         all_samples - Every sample recorded, one row per sample.
+                     - Row:[sample point, objective value, evaluation, time]
+                     - Evaluation Iteration may not increase evenly as it is 
+                        the iteration of objective function evaluation."""
       n = len(self.all_x_values)
       d = len(self.all_x_values[0])
       x_data = np.reshape(np.array(self.all_x_values), (n,d))
-      f_data = np.reshape(np.array(self.all_obj_values), (n,1))
-      return np.concatenate((x_data, f_data), axis=1)
+      f_data = np.reshape(np.array(self.all_f_values), (n,1))
+      time = np.reshape(np.array(self.all_time_track), (n,2))
+      all_samples = np.concatenate((x_data, f_data, time), axis=1)
+
+      x_data = np.reshape(np.array(self.L_x_values), (self.L_length,d))
+      f_data = np.reshape(np.array(self.L_f_values), (self.L_length,1))
+      L_samples = np.concatenate((x_data, f_data), axis=1)
+
+      return L_samples, all_samples
+
+   def objective_data(self, max_iter):
+      """Return a max_iter x 3 array of interpolated objective function
+         values during the current search. 
+         Array row = [evaluation iteration, time, function value]
+         This is used to compare between methods."""
+      n = len(self.all_x_values)
+      f_data = np.reshape(np.array(self.all_f_values), (n,1))
+      time = np.reshape(np.array(self.all_time_track), (n,2))
+
+      # Store minimum function value at given iteration
+      lowest_f = np.zeros((n,1))
+      min_f = 10e20
+      for i, f in enumerate(f_data):
+         if f < min_f:
+            min_f = f
+         lowest_f[i] = min_f
+
+      # Use spline fit to interpolate
+      new_evals = np.reshape(np.linspace(1, max_iter, max_iter), (max_iter, 1))
+      f_spline = CubicSpline(time[:,0], lowest_f)
+      new_f = np.reshape(f_spline(new_evals), (max_iter, 1))
+      time_spline = CubicSpline(time[:,0], time[:,1])
+      new_wall_time = np.reshape(time_spline(new_evals), (max_iter, 1))
+
+      return np.concatenate((new_evals, new_wall_time, new_f), axis=1)
+
+   def reset(self):
+      """Reset variable parameters."""
+      self.all_x_values = []
+      self.all_f_values = []
+      self.all_time_track = []
+      self.L_x_values = [] 
+      self.L_f_values = [] 
 
    def most_similar(self, point):
       """Find the point which is most similar in the archive.

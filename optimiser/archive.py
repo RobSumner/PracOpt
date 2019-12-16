@@ -7,7 +7,6 @@ Archive - Class to act as archive or storage method for optimsation.
 
 import numpy as np
 import time
-from scipy.interpolate import CubicSpline
 
 class Archive:
    """Storage method for optimisation. 
@@ -129,8 +128,7 @@ class Archive:
          Returns:
          data - A [max_iter x 3] array of interpolated objective function
                 values during the current search. 
-              - Array row = [evaluation iteration, time, function value]
-               """
+              - Array row = [evaluation iteration, time, function value]."""
       n = len(self.all_x_values)
       f_data = np.reshape(np.array(self.all_f_values), (n,1))
       time = np.reshape(np.array(self.all_time_track), (n,2))
@@ -139,21 +137,21 @@ class Archive:
       time[:,1] -= time[0,1]
 
       # Store minimum function value at given iteration
-      lowest_f = np.zeros((n,1))
+      lowest_f = np.zeros((n,))
       min_f = 10e20
       for i, f in enumerate(f_data):
          if f < min_f:
             min_f = f
          lowest_f[i] = min_f
 
-      # Use spline fit to interpolate
-      new_evals = np.reshape(np.linspace(1, max_iter, max_iter), (max_iter, 1))
-      f_spline = CubicSpline(time[:,0], lowest_f)
-      new_f = np.reshape(f_spline(new_evals), (max_iter, 1))
-      time_spline = CubicSpline(time[:,0], time[:,1])
-      new_wall_time = np.reshape(time_spline(new_evals), (max_iter, 1))
+      # Linearly interpolate to give values for all evaluation iterations
+      new_evals = np.linspace(1, max_iter, max_iter)
+      new_f = np.interp(new_evals, time[:,0], lowest_f)
+      new_wall_time = np.interp(new_evals, time[:,0], time[:,1])
 
-      return np.concatenate((new_evals, new_wall_time, new_f), axis=1)
+      return np.concatenate( ( np.reshape(new_evals, (max_iter,1)), 
+                               np.reshape(new_wall_time, (max_iter,1)),
+                               np.reshape(new_f, (max_iter,1)) ), axis=1)
 
    def reset(self):
       """Reset variable parameters."""

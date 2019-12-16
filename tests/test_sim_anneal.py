@@ -2,54 +2,51 @@
 
 import pytest
 import numpy as np
-from optimiser.optimiser import SimAnneal, TrialMode, InitialTempMode
+from optimiser.optimiser import SimAnneal, TrialMode, InitialTempMode, evaluate
 from optimiser.objective import Shubert, ObjectiveTest
 
 @pytest.fixture
 def new_test_sim():
    """Return a new instance of the simulated annealing class
       with 5D test function.
-   """
+      Don't run optimise on this as objective is constant - will hang."""
    obj = ObjectiveTest()
-   return SimAnneal(obj, TrialMode.BASIC, InitialTempMode.KIRKPATRICK)
+   sim = SimAnneal(obj, TrialMode.BASIC, InitialTempMode.KIRKPATRICK)
+   sim.max_evaluations = 10
+   return sim
 
 @pytest.fixture
 def new_test_sim_white():
    """Return a new instance of the simulated annealing class
-      with 5D test function.
-   """
+      with 5D test function."""
    obj = ObjectiveTest()
    return SimAnneal(obj, TrialMode.BASIC, InitialTempMode.WHITE)
 
 @pytest.fixture
 def new_sim2():
    """Return a new instance of the simulated annealing class
-      with 2D Shubert objective function.
-   """
+      with 2D Shubert objective function."""
    obj = Shubert(2)
    return SimAnneal(obj, TrialMode.BASIC, InitialTempMode.KIRKPATRICK)
 
 @pytest.fixture
 def new_sim2_white():
    """Return a new instance of the simulated annealing class
-      with 2D Shubert objective function.
-   """
+      with 2D Shubert objective function."""
    obj = Shubert(2)
    return SimAnneal(obj, TrialMode.BASIC, InitialTempMode.WHITE)
 
 @pytest.fixture
 def new_sim5():
    """Return a new instance of the simulated annealing class
-      with 2D Shubert objective function.
-   """
+      with 2D Shubert objective function."""
    obj = Shubert(5)
    return SimAnneal(obj, TrialMode.BASIC, InitialTempMode.KIRKPATRICK)
 
 @pytest.fixture
 def new_sim5_white():
    """Return a new instance of the simulated annealing class
-      with 2D Shubert objective function.
-   """
+      with 2D Shubert objective function."""
    obj = Shubert(5)
    return SimAnneal(obj, TrialMode.BASIC, InitialTempMode.WHITE)
 
@@ -187,6 +184,10 @@ def test_run(new_sim2):
    assert round(new_sim2.initial_T) == 30
    assert round(new_sim2.current_T) == 25
 
+def test_evaluate(new_sim2):
+   """Test the evaluation function."""
+   new_sim2.max_evaluations = 500
+   results = evaluate(new_sim2, runs=2)
+   assert results.shape[0] == new_sim2.max_evaluations
+   assert results.shape[1] == 3
    
-
-

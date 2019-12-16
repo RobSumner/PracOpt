@@ -78,6 +78,7 @@ def test_archive_objective_data(new_arch):
    assert shape[1] == 3
    assert sum(data[:,2]) == 110*100
    assert data[-1,0] == 110
+   assert data[0,1] == 0
 
 def test_archive_reset(new_arch2):
    """Test the reset method for archive."""

@@ -135,6 +135,9 @@ class Archive:
       f_data = np.reshape(np.array(self.all_f_values), (n,1))
       time = np.reshape(np.array(self.all_time_track), (n,2))
 
+      # Rescale so first sample is at time 0
+      time[:,1] -= time[0,1]
+
       # Store minimum function value at given iteration
       lowest_f = np.zeros((n,1))
       min_f = 10e20

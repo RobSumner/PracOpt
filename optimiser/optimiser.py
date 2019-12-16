@@ -262,4 +262,37 @@ def progress_bar(value, max_value, width=15):
    progress = round(value/max_value*width)
    remaining = width - progress
    print('\rOptimisation Progress: ' + "+"*progress + "-"*remaining, end="")
+
+def evaluate(SimAnneal, runs=25):
+   """Evaluate the performance of an optimiser class.
+      Parameters:
+      SimAnneal - Simulated annealing class. 
+      runs - Number of separate optimise runs to perform. 
+      Returns:
+      performance_data - Averaged data on performance over iteration 
+                         and time."""
+
+   max_evals = SimAnneal.max_evaluations
+   f_data = np.zeros((max_evals, runs))
+   time_data = np.zeros((max_evals, runs))
+
+   for i in range(runs):
+      # Reset all values
+      SimAnneal.reset()
+
+      # Run the optimisation
+      print("Analysis run: ", i)
+      SimAnneal.run()
+
+      # Get objective data
+      data = SimAnneal.archive.objective_data(max_evals)
+      f_data[:,i] = data[:,2]
+      time_data[:,i] = data[:,1]
+   
+   # Average across runs.
+   f_average = np.reshape(np.mean(f_data, axis=1), (max_evals,1))
+   t_average = np.reshape(np.mean(time_data, axis=1), (max_evals,1))
+   iters = np.reshape(np.linspace(1, max_evals, max_evals), (max_evals,1))
+
+   return np.concatenate((iters, t_average, f_average), axis=1)
    

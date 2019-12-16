@@ -34,7 +34,10 @@ class Shubert:
       """Returns true if point x is feasible.
          If index is supplied, the coordinate with this
          index is checked for feasibility."""
-      if len(x) != self.n:
+      # Check the input variable
+      size = 1
+      for dim in np.shape(x): size *= dim
+      if len(x) != self.n or size != self.n:
          raise ValueError('Dimension of x does not match function definition.')
       if index is not None:
          if index < 0 or index >= self.n:

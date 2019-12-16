@@ -86,6 +86,9 @@ def test_shubert2_values(new_shubert2, point, value):
    with pytest.raises(ValueError):
       new_shubert2.f([1,2,3])
 
+   with pytest.raises(ValueError):
+      new_shubert2.f([[1,2],[1,2]])
+
    new_shubert2.reset()
    assert new_shubert2.evaluations == 0
 
@@ -110,6 +113,9 @@ def test_shubert5_values(new_shubert5, point, value):
       
    with pytest.raises(ValueError):
       new_shubert5.f([1,2,3,4,5,6])
+
+   with pytest.raises(ValueError):
+      new_shubert5.f([[1,2,3,4,5],[1,2,3,4,5]])
 
    new_shubert5.reset()
    assert new_shubert5.evaluations == 0

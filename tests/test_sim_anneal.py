@@ -214,7 +214,7 @@ def test_run_reset(new_sim2):
    assert new_sim2.current_T == 10e10 
    assert new_sim2.trials == 0
    assert new_sim2.acceptances == 0 
-   assert np.sum(new_sim2.Q_matrix) == 0 
+   assert np.sum(new_sim2.Q_matrix) == 4 
 
 def test_evaluate(new_sim2):
    """Test the evaluation function."""

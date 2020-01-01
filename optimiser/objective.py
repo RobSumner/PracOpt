@@ -24,13 +24,17 @@ class Shubert:
    def __init__(self, n):
       """Initialise Shubert function properties.
          Parameters:
-         n - Dimension of the function."""
+         n - Dimension of the function.   
+      """
       if type(n) is not int or n <= 0:
          raise ValueError('Dimension must be integer greater than 0.')
       self.n = n
 
+      # Solution bounds.
       self.x_min = -2
       self.x_max = 2
+
+      # Number of function evaluations. 
       self.evaluations = 0
 
    def is_feasible(self, x, index=None):
@@ -96,6 +100,7 @@ class ObjectiveTest:
       self.n = 1
       self.x_max = 2
       self.x_min = -2
+      self.max_step = 1
 
    def is_feasible(self, x, index=None):
       """Returns true for all points."""

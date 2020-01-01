@@ -2,9 +2,14 @@
 
 Classes
 -------
-TrialMode - Enumerated class to describe trial update mode. 
-InitialTempMode - Enumerated class to describe initial temperature mode.
 SimAnneal - Class to perform Simulated Annealing optimisation
+
+Functions
+---------
+progress_bar - Creates a progress bar for use in terminals when running opts.
+
+evaluate - Function to evaluate performance of an optimisation method. 
+           This performs multiple runs to account for stochastic methods. 
 
 """
 
@@ -13,18 +18,6 @@ from optimiser.archive import Archive
 from enum import Enum
 import numpy as np 
 import copy
-
-# class TrialMode(Enum):
-#    """Mode describing which trial update mode to use."""
-#    BASIC = 1
-#    VANDERBILT = 2
-#    PARKS = 3
-
-# class InitialTempMode(Enum):
-#    """Mode describing the initial temperature calculation."""
-#    PRESET = 1
-#    KIRKPATRICK = 2
-#    WHITE = 3
 
 class SimAnneal:
    """Perform Simulated Annealing Optimisiation
@@ -48,18 +41,22 @@ class SimAnneal:
                            x_min, x_max.  
    """
 
-   def __init__(self, objective, trial_mode="vanderbilt", initial_temp_mode="kirkpatrick"):
+   def __init__(self, objective, trial_mode="vanderbilt", 
+                  initial_temp_mode="kirkpatrick", max_step=2):
       """Initialise the optimiser.
          Parameters:
          trial_mode - Defines how the trial solutions are generated.
          initial_temp_mode - Defines how initial temperature is set.
+         max_step - Maximum allowable step size to be used in the objective function. 
       """
-      # Check input arguments
+      # Set new trial suggestion method
       trial_modes = ['basic','vanderbilt', 'parks']
-      initial_temp_modes = ['preset', 'kirkpatrick', 'white']
       if trial_mode not in trial_modes:
          raise ValueError('Trial Mode not recognised.')
       self.trial_mode = trial_mode
+
+      # Set initial temperature method
+      initial_temp_modes = ['preset', 'kirkpatrick', 'white']
       if initial_temp_mode not in initial_temp_modes:
          raise ValueError('Initial Temperature Mode not recognised.')
       self.initial_temp_mode = initial_temp_mode
@@ -67,14 +64,17 @@ class SimAnneal:
       # Set objective function
       self.objective = objective
       self.dimension = objective.n
+      self.max_step = max_step
 
       # Point, Objective value & change in objective.
       self.x = np.zeros((self.dimension, 1)) # Sample point
 
-      # Trial solutions
+      # Trial solution method data
       self.alpha = 0.1
       self.omega = 2.1
-      self.Q_matrix = np.zeros((self.dimension, self.dimension))
+
+      # Initialise Q to diagonal of maximum allowable step. 
+      self.Q_matrix = np.eye(self.dimension)*self.max_step
 
       # Annealing schedule
       self.initial_T = 10e10
@@ -133,8 +133,8 @@ class SimAnneal:
       self.archive.reset()
       self.objective.reset()
       
-      # Reset trial update parameters
-      self.Q_matrix = np.zeros((self.dimension, self.dimension))
+      # Initialise Q to diagonal of maximum allowable step. 
+      self.Q_matrix = np.eye(self.dimension)*self.max_step
 
    def acceptable_solution(self, df):
       """Return True if solution decreases objective function.
@@ -182,8 +182,8 @@ class SimAnneal:
          for i in range(self.dimension):
             # Sample new feasible position from altered range
             # This avoids wasted samples and result is the same.
-            x_min = max(self.objective.x_min, x0[i] + self.objective.x_min)
-            x_max = min(self.objective.x_max, x0[i] + self.objective.x_max)
+            x_min = max(self.objective.x_min, x0[i] - self.max_step)
+            x_max = min(self.objective.x_max, x0[i] + self.max_step)
             x_new[i] = self.uniform_random(x_min=x_min, x_max=x_max)
             while not self.objective.is_feasible(x_new, i):
                x_new[i] = self.uniform_random(x_min=x_min, x_max=x_max)
@@ -204,12 +204,14 @@ class SimAnneal:
          self.Q_matrix = np.linalg.cholesky(S_matrix)
 
          # Dynamically set sampling range to minimise samples required.
+         # This calculates an upper bound on the range of uniform variable
+         # that will still produce feasible solutions. 
          row_norm_Q = np.linalg.norm(self.Q_matrix, 1, axis=1)
-         x_min = self.objective.x_min
-         x_max = self.objective.x_max
          range_vals = (self.x - self.objective.x_min) / \
                         np.reshape(row_norm_Q, (self.dimension,1))
+
          # Limit range if largest required interval is smaller than root 3. 
+         # Ie remove  any wasted samples in this area. 
          bound = min(max(range_vals), np.sqrt(3))
          
          # Sample until feasible

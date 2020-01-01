@@ -73,12 +73,14 @@ class SimAnneal:
       self.alpha = 0.1
       self.omega = 2.1
 
-      # Initialise Q to diagonal of maximum allowable step. 
+      # Initialise Q & D to diagonal of maximum allowable step. 
       self.Q_matrix = np.eye(self.dimension)*self.max_step
+      self.D_matrix = np.eye(self.dimension)*self.max_step
 
       # Annealing schedule
       self.initial_T = 10e10
       self.current_T = 10e10
+      self.temp_start_id = 0 # Id of first sample at new temperature.
       self.trials = 0 # Total length of chain
       self.acceptances = 0 # Total number of acceptances
       self.decrement_length = 100
@@ -125,6 +127,7 @@ class SimAnneal:
 
       # Annealing schedule
       self.initial_T = 10e10
+      self.temp_start_id = 0
       self.current_T = 10e10
       self.trials = 0 # Total length of chain
       self.acceptances = 0 # Total number of acceptances
@@ -133,8 +136,9 @@ class SimAnneal:
       self.archive.reset()
       self.objective.reset()
       
-      # Initialise Q to diagonal of maximum allowable step. 
+      # Initialise Q  and D matrices to diagonal of maximum allowable step. 
       self.Q_matrix = np.eye(self.dimension)*self.max_step
+      self.D_matrix = np.eye(self.dimension)*self.max_step
 
    def acceptable_solution(self, df):
       """Return True if solution decreases objective function.
@@ -179,21 +183,25 @@ class SimAnneal:
       # Simple diagonal (C) matrix update.
       x_new = np.zeros((self.dimension,1))
       if self.trial_mode == "basic":
+         # Sample new feasible position from altered range
+         # This avoids wasted samples and result is the same.
          for i in range(self.dimension):
-            # Sample new feasible position from altered range
-            # This avoids wasted samples and result is the same.
             x_min = max(self.objective.x_min, x0[i] - self.max_step)
             x_max = min(self.objective.x_max, x0[i] + self.max_step)
             x_new[i] = self.uniform_random(x_min=x_min, x_max=x_max)
+            
+            # Check that new value in dimension only is feasible
             while not self.objective.is_feasible(x_new, i):
                x_new[i] = self.uniform_random(x_min=x_min, x_max=x_max)
 
       # Vanderbilt and Louie method [1984]
       elif self.trial_mode == "vanderbilt":
-         # Calculate covariance matrix of path to this point.
-         n = len(self.archive.all_x_values)
+         # Calculate covariance matrix of path at current temperature
+         n = len(self.archive.all_x_values) - (self.temp_start_id)
          if n > 1:
-            path = np.reshape(np.array(self.archive.all_x_values), (n,self.dimension))
+            # Covariance of all values at this temperature
+            path = np.reshape(np.array(self.archive.all_x_values[self.temp_start_id:]),
+                                       (n,self.dimension))
             path_cov = np.cov(path.T)
          else:
             path_cov = np.eye(self.dimension)
@@ -203,23 +211,35 @@ class SimAnneal:
          S_matrix = (1 - self.alpha)*S_matrix + self.alpha*self.omega*path_cov
          self.Q_matrix = np.linalg.cholesky(S_matrix)
 
-         # Dynamically set sampling range to minimise samples required.
-         # This calculates an upper bound on the range of uniform variable
-         # that will still produce feasible solutions. 
-         row_norm_Q = np.linalg.norm(self.Q_matrix, 1, axis=1)
-         range_vals = (self.x - self.objective.x_min) / \
-                        np.reshape(row_norm_Q, (self.dimension,1))
-
-         # Limit range if largest required interval is smaller than root 3. 
-         # Ie remove  any wasted samples in this area. 
-         bound = min(max(range_vals), np.sqrt(3))
+         # Set maximum step size by normalising Q_matrix
+         max_row_norm_Q = max(np.linalg.norm(self.Q_matrix, 1, axis=1))
+         Q_mat = self.Q_matrix * self.max_step / (np.sqrt(3) * max_row_norm_Q)
          
          # Sample until feasible
-         u = self.uniform_random(x_min=-1*bound, x_max=bound, dim=self.dimension)
-         x_new = x0 + np.matmul(self.Q_matrix, u)
+         u = self.uniform_random(x_min=-np.sqrt(3), x_max=np.sqrt(3), dim=self.dimension)
+         x_new = x0 + np.matmul(Q_mat, u)
          while not self.objective.is_feasible(x_new):
-            u = self.uniform_random(x_min=-1*bound, x_max=bound, dim=self.dimension)
-            x_new = x0 + np.matmul(self.Q_matrix, u)
+            u = self.uniform_random(x_min=-np.sqrt(3), x_max=np.sqrt(3), dim=self.dimension)
+            x_new = x0 + np.matmul(Q_mat, u)
+
+      # Parks method [1990]
+      elif self.trial_mode == 'parks':
+         #  Set maximum step size by normalizing D matrix
+         max_row_norm_D = max(np.linalg.norm(self.D_matrix, 1, axis=1))
+         D_mat = self.D_matrix * self.max_step / max_row_norm_D
+         
+         # Sample until feasible
+         u = self.uniform_random(x_min=-1, x_max=1, dim=self.dimension)
+         x_new = x0 + np.matmul(D_mat, u)
+         while not self.objective.is_feasible(x_new):
+            u = self.uniform_random(x_min=-1, x_max=1, dim=self.dimension)
+            x_new = x0 + np.matmul(D_mat, u)
+
+         # Update D matrix
+         R_matrix = np.eye(self.dimension)
+         mag_change = np.abs(x_new - x0)
+         for i in range(self.dimension): R_matrix[i][i] = mag_change[i][0]
+         self.D_matrix = (1 - self.alpha)*self.D_matrix + self.alpha*self.omega*R_matrix
 
       self.trials += 1
       return x_new
@@ -228,6 +248,11 @@ class SimAnneal:
       """Update the annealing temperature."""
       # Implement basic length based decrement. 
       self.current_T = self.initial_T*0.95**(self.trials // self.decrement_length)
+
+      # Reset Q matrix whenever temperature is lowered.
+      if (self.trials % self.decrement_length) == 0:
+         self.Q_matrix = np.eye(self.dimension)*self.max_step
+         self.temp_start_id = len(self.archive.all_x_values)
       return
 
    def set_initial_temp(self):

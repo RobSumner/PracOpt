@@ -5,6 +5,7 @@ import numpy as np
 from optimiser.optimiser import SimAnneal, evaluate
 from optimiser.objective import Shubert, ObjectiveTest
 
+# Simulated annealing with test objective functions
 @pytest.fixture
 def new_test_sim():
    """Return a new instance of the simulated annealing class
@@ -22,6 +23,7 @@ def new_test_sim_white():
    obj = ObjectiveTest()
    return SimAnneal(obj, trial_mode='basic', initial_temp_mode='white')
 
+# Simulated annealing with 2D Shubert objective functions. 
 @pytest.fixture
 def new_sim2():
    """Return a new instance of the simulated annealing class
@@ -43,6 +45,14 @@ def new_sim2_white():
    obj = Shubert(2)
    return SimAnneal(obj, trial_mode='basic', initial_temp_mode='white')
 
+@pytest.fixture
+def new_sim2_parks():
+   """Return new instance of sim annealing class with 2D 
+      Shubert function and Parks trial solution method."""
+   obj = Shubert(2)
+   return SimAnneal(obj, trial_mode='parks', initial_temp_mode='white')
+
+# Simulated annealing classes with 5D Shubert objective
 @pytest.fixture
 def new_sim5():
    """Return a new instance of the simulated annealing class
@@ -118,6 +128,23 @@ def test_new_vanderbilt_trial_solution(new_sim2_vanderbilt):
    # Test using provided start point
    new_x = new_sim2_vanderbilt.new_trial_solution([[0],[0]])
    assert new_sim2_vanderbilt.trials == 2
+
+def test_new_parks_trial_solution(new_sim2_parks):
+   """Test new trial proposal method."""
+   # Check class 
+   assert all([a == b for a, b in zip(new_sim2_parks.x, np.zeros((2,1)))])
+   # Test starting point using class start point. 
+   assert new_sim2_parks.trials == 0
+   new_x = new_sim2_parks.new_trial_solution()
+   assert all([a != b for a, b in zip(new_x, np.zeros((2,1)))])
+   assert new_sim2_parks.trials == 1
+
+   # Check update of D matrix
+   a = new_sim2_parks.alpha
+   w = new_sim2_parks.omega
+   for i in range(2):
+      assert new_sim2_parks.D_matrix[i][i] == (1-a)*new_sim2_parks.max_step \
+                                                 + a*w*np.abs(new_x[i][0])
 
 def test_set_initial_temperature(new_test_sim, new_test_sim_white, new_sim2, 
                                  new_sim2_white, new_sim5, new_sim5_white):

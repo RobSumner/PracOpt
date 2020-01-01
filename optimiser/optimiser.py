@@ -14,17 +14,17 @@ from enum import Enum
 import numpy as np 
 import copy
 
-class TrialMode(Enum):
-   """Mode describing which trial update mode to use."""
-   BASIC = 1
-   VANDERBILT = 2
-   PARKS = 3
+# class TrialMode(Enum):
+#    """Mode describing which trial update mode to use."""
+#    BASIC = 1
+#    VANDERBILT = 2
+#    PARKS = 3
 
-class InitialTempMode(Enum):
-   """Mode describing the initial temperature calculation."""
-   PRESET = 1
-   KIRKPATRICK = 2
-   WHITE = 3
+# class InitialTempMode(Enum):
+#    """Mode describing the initial temperature calculation."""
+#    PRESET = 1
+#    KIRKPATRICK = 2
+#    WHITE = 3
 
 class SimAnneal:
    """Perform Simulated Annealing Optimisiation
@@ -48,16 +48,19 @@ class SimAnneal:
                            x_min, x_max.  
    """
 
-   def __init__(self, objective, trial_mode, initial_temp_mode):
+   def __init__(self, objective, trial_mode="vanderbilt", initial_temp_mode="kirkpatrick"):
       """Initialise the optimiser.
          Parameters:
          trial_mode - Defines how the trial solutions are generated.
-         initial_temp_mode - Defines how initial temperature is set."""
+         initial_temp_mode - Defines how initial temperature is set.
+      """
       # Check input arguments
-      if type(trial_mode) != TrialMode:
+      trial_modes = ['basic','vanderbilt', 'parks']
+      initial_temp_modes = ['preset', 'kirkpatrick', 'white']
+      if trial_mode not in trial_modes:
          raise ValueError('Trial Mode not recognised.')
       self.trial_mode = trial_mode
-      if type(initial_temp_mode) != InitialTempMode:
+      if initial_temp_mode not in initial_temp_modes:
          raise ValueError('Initial Temperature Mode not recognised.')
       self.initial_temp_mode = initial_temp_mode
 
@@ -175,7 +178,7 @@ class SimAnneal:
          
       # Simple diagonal (C) matrix update.
       x_new = np.zeros((self.dimension,1))
-      if self.trial_mode is TrialMode.BASIC:
+      if self.trial_mode == "basic":
          for i in range(self.dimension):
             # Sample new feasible position from altered range
             # This avoids wasted samples and result is the same.
@@ -186,7 +189,7 @@ class SimAnneal:
                x_new[i] = self.uniform_random(x_min=x_min, x_max=x_max)
 
       # Vanderbilt and Louie method [1984]
-      elif self.trial_mode is TrialMode.VANDERBILT:
+      elif self.trial_mode == "vanderbilt":
          # Calculate covariance matrix of path to this point.
          n = len(self.archive.all_x_values)
          if n > 1:
@@ -212,8 +215,6 @@ class SimAnneal:
          # Sample until feasible
          u = self.uniform_random(x_min=-1*bound, x_max=bound, dim=self.dimension)
          x_new = x0 + np.matmul(self.Q_matrix, u)
-         print(x0)
-         print(np.matmul(self.Q_matrix, u))
          while not self.objective.is_feasible(x_new):
             u = self.uniform_random(x_min=-1*bound, x_max=bound, dim=self.dimension)
             x_new = x0 + np.matmul(self.Q_matrix, u)
@@ -237,7 +238,7 @@ class SimAnneal:
                  objective function during initial search.
          PRESET - Use a constant value preset in the class.
                 - Default value is 10e10 in this case."""
-      if self.initial_temp_mode is InitialTempMode.PRESET:
+      if self.initial_temp_mode == "preset":
          # Temp already set in class - no calculation needed.
          return
       
@@ -263,10 +264,10 @@ class SimAnneal:
       df_samples = df_samples[df_samples != 0]
 
       # Set T0 based on mode. 
-      if self.initial_temp_mode is InitialTempMode.KIRKPATRICK:
+      if self.initial_temp_mode == "kirkpatrick":
          # Set T to be average
          self.initial_T = -1*np.mean(df_samples)/np.log(0.8)
-      elif self.initial_temp_mode is InitialTempMode.WHITE:
+      elif self.initial_temp_mode == "white":
          # Calculate sd of samples
          self.initial_T = np.std(df_samples) 
       

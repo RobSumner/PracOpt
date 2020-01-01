@@ -2,7 +2,7 @@
 
 import pytest
 import numpy as np
-from optimiser.optimiser import SimAnneal, TrialMode, InitialTempMode, evaluate
+from optimiser.optimiser import SimAnneal, evaluate
 from optimiser.objective import Shubert, ObjectiveTest
 
 @pytest.fixture
@@ -11,7 +11,7 @@ def new_test_sim():
       with 5D test function.
       Don't run optimise on this as objective is constant - will hang."""
    obj = ObjectiveTest()
-   sim = SimAnneal(obj, TrialMode.BASIC, InitialTempMode.KIRKPATRICK)
+   sim = SimAnneal(obj, trial_mode='basic', initial_temp_mode='kirkpatrick')
    sim.max_evaluations = 10
    return sim
 
@@ -20,50 +20,50 @@ def new_test_sim_white():
    """Return a new instance of the simulated annealing class
       with 5D test function."""
    obj = ObjectiveTest()
-   return SimAnneal(obj, TrialMode.BASIC, InitialTempMode.WHITE)
+   return SimAnneal(obj, trial_mode='basic', initial_temp_mode='white')
 
 @pytest.fixture
 def new_sim2():
    """Return a new instance of the simulated annealing class
       with 2D Shubert objective function."""
    obj = Shubert(2)
-   return SimAnneal(obj, TrialMode.BASIC, InitialTempMode.KIRKPATRICK)
+   return SimAnneal(obj, trial_mode='basic', initial_temp_mode='kirkpatrick')
 
 @pytest.fixture
 def new_sim2_vanderbilt():
    """Return a new instance of the simulated annealing class
       with 2D Shubert objective function."""
    obj = Shubert(2)
-   return SimAnneal(obj, TrialMode.VANDERBILT, InitialTempMode.KIRKPATRICK)
+   return SimAnneal(obj, trial_mode='vanderbilt', initial_temp_mode='kirkpatrick')
 
 @pytest.fixture
 def new_sim2_white():
    """Return a new instance of the simulated annealing class
       with 2D Shubert objective function."""
    obj = Shubert(2)
-   return SimAnneal(obj, TrialMode.BASIC, InitialTempMode.WHITE)
+   return SimAnneal(obj, trial_mode='basic', initial_temp_mode='white')
 
 @pytest.fixture
 def new_sim5():
    """Return a new instance of the simulated annealing class
       with 2D Shubert objective function."""
    obj = Shubert(5)
-   return SimAnneal(obj, TrialMode.BASIC, InitialTempMode.KIRKPATRICK)
+   return SimAnneal(obj, trial_mode='basic', initial_temp_mode='kirkpatrick')
 
 @pytest.fixture
 def new_sim5_white():
    """Return a new instance of the simulated annealing class
       with 2D Shubert objective function."""
    obj = Shubert(5)
-   return SimAnneal(obj, TrialMode.BASIC, InitialTempMode.WHITE)
+   return SimAnneal(obj, trial_mode='basic', initial_temp_mode='white')
 
 def test_sim_anneal_init(new_sim2, new_sim5):
    """Test initialisation of the simulated annealing class."""
    assert type(new_sim2.objective) == Shubert
-   assert new_sim2.trial_mode == TrialMode.BASIC
+   assert new_sim2.trial_mode == "basic"
 
    assert type(new_sim5.objective) == Shubert
-   assert new_sim5.trial_mode == TrialMode.BASIC
+   assert new_sim5.trial_mode == 'basic'
 
 def test_sim_anneal_rand(new_sim5, new_test_sim):
    """Test random number generator."""

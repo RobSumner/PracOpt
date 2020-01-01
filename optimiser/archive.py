@@ -113,8 +113,9 @@ class Archive:
       time = np.reshape(np.array(self.all_time_track), (n,2))
       all_samples = np.concatenate((x_data, f_data, time), axis=1)
 
-      x_data = np.reshape(np.array(self.L_x_values), (self.L_length,d))
-      f_data = np.reshape(np.array(self.L_f_values), (self.L_length,1))
+
+      x_data = np.reshape(np.array(self.L_x_values), (len(self.L_x_values),d))
+      f_data = np.reshape(np.array(self.L_f_values), (len(self.L_f_values),1))
       L_samples = np.concatenate((x_data, f_data), axis=1)
 
       return L_samples, all_samples

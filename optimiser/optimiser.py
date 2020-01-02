@@ -27,6 +27,7 @@ class SimAnneal:
    objective   - Objective class describing function to be optimised.
    trial_mode - The method used for selecting new trial solutions. 
    initial_temp_mode - The method used to select the initial temperature. 
+   max_step - Defines neighbourhood in which trial solutions can be found.
 
    Public Methods
    -------------- 
@@ -38,7 +39,7 @@ class SimAnneal:
    update_temperature  - Update the annealing temperature. 
    set_initial_temp    - Set the initial temperature based upon initial 
                            temperature mode. 
-   uniform_random      - Return 1D sample from uniform variable in range
+   uniform_random      - Return sample from uniform variable in range
                            x_min, x_max.  
    """
 
@@ -346,16 +347,27 @@ class ParticleSwarm:
    Implement particle swarm optimisation (PSO). 
    Parameters
    ---------- 
-
+   objective - Objective function to reduce. 
+   n_particles - Number of particles to employ. 
+   omega, phi_p, phi_g - Parameters of velocity update.
+   
    Public Methods
    -------------- 
-
+   run - Perform the optimisation.
+   reset - Reset all variable parameters, storage and classes.  
+   initialise - Initialise the positions and velocities of particles. 
+   update_velocity - Update particle velocities following basic PSO. 
+   uniform_random      - Return sample from uniform variable in range
+                           x_min, x_max. 
    """
-   def __init__(self, objective, n_particles=25):
+   def __init__(self, objective, n_particles=25, omega=0.5, phi_p=0.25, phi_g=0.7):
       """Initialise the particle.
          Parameters:
          objective - Objective function which is to be minimised. 
          n_particles - Number of particles to use. 
+         omega - The inertia multiplier term for the velocity update. 
+         phi_p - The particle optimum multiplier term for velocity update.
+         phi_g - The global optimum multiplier term for velocity update.
       """
       # Set objective function
       self.objective = objective
@@ -375,9 +387,14 @@ class ParticleSwarm:
       self.global_best_f = np.Inf # Initialise to max
 
       # Velocity update parameters
-      self.omega = 0.5
-      self.phi_p = 0.25
-      self.phi_g = 0.75
+      if omega < 0 or phi_g < 0 or phi_p < 0:
+         raise ValueError("Velocity parameters must be positive.")
+      # This implementation requires phi_p + phi_g <= 1 to enforce feasibility. 
+      elif (phi_p + phi_g) > 1:
+         raise ValueError("This implementation requirs phi_p + phi_g <= 1")
+      self.omega = omega
+      self.phi_p = phi_p
+      self.phi_g = phi_g
 
       # Limit on evaluations
       self.max_evaluations = 10000 
@@ -448,6 +465,10 @@ class ParticleSwarm:
          f_val = self.objective.f(new_x) 
          self.particle_best_f[i,0] = f_val
 
+         # Store value in archive.
+         self.archive.add(self.particle_x[i,:], f_val, 
+                              self.objective.evaluations)
+
          # Update global best.
          if f_val < self.global_best_f:
             self.global_best_f = f_val
@@ -461,8 +482,10 @@ class ParticleSwarm:
 
    def update_velocity(self, particle_index):
       """Update the velocity of particle with index particle_index.
-         New velcity is put in place. 
-         Checks are made here that the new velocity produces a valid position. 
+         New velcity is updated in-place 
+         Feasibility is achieved by iteratively reducing the size of the inertia term.
+         This enforces feasibility as phi_p + phi_g <= 1 so when inertia term becomes 
+         small, the convex hull of remaining velocity terms lies inside feasible region.
          Parameters:
          particle_index - Storage index of particle being updated. 
       """
@@ -489,10 +512,12 @@ class ParticleSwarm:
                    self.phi_g * rand[1] * diff_g
          
          # Reduce inertia until new position is feasible.
+         # When inertia = 0, position must be feasible as it lies
+         # in convex hull of two feasible points. 
          x_new = current_x + np.ones(current_x.shape) * v_new[d]
          it = 1
          while not self.objective.is_feasible(x_new, index=d):
-            v_new[d] = self.omega*0.5**it * current_v[d] + \
+            v_new[d] = self.omega*0.9**it * current_v[d] + \
                    self.phi_p * rand[0] * diff_p + \
                    self.phi_g * rand[1] * diff_g
             x_new = current_x + np.ones(current_x.shape) * v_new[d]

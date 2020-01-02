@@ -6,6 +6,7 @@ Archive - Class to act as archive or storage method for optimsation.
 """
 
 import numpy as np
+import scipy.io
 import time
 import copy
 
@@ -137,7 +138,8 @@ class Archive:
          Returns:
          data - A [max_iter x 3] array of interpolated objective function
                 values during the current search. 
-              - Array row = [evaluation iteration, time, function value]."""
+              - Array row = [evaluation iteration, time, function value].
+      """
       n = len(self.all_x_values)
       f_data = np.reshape(np.array(self.all_f_values), (n,1))
       time = np.reshape(np.array(self.all_time_track), (n,2))
@@ -176,7 +178,8 @@ class Archive:
          point - Sample point to compare elements of the archive to. 
          Returns:
          min_sim - The lowest similarity value found in the archive.
-         index - Index of the archive element with this similarity value."""
+         index - Index of the archive element with this similarity value.
+      """
       if len(self.L_x_values) == 0:
          return None, None
 
@@ -196,7 +199,8 @@ class Archive:
          point_1, point_2 - Two points to be compared. 
                           - Order does not matter.
          Returns:
-         similarity - l2 norm of vector between points."""
+         similarity - l2 norm of vector between points.
+      """
       # Convert into numpy arrays if not currently.
       if not isinstance(point_1, np.ndarray): point_1 = np.array([point_1])
       if not isinstance(point_2, np.ndarray): point_2 = np.array([point_2])
@@ -206,3 +210,15 @@ class Archive:
          raise ValueError('Size of points being compared for similarity do not match.')
 
       return np.linalg.norm(point_1 - point_2, 2)
+
+   def save_mat(self, filepath):
+      """Save archive results as a .mat file for use in MATLAB.
+      Parameters:
+      filepath - The path of the file to save results to. 
+               - Does not need to have .mat extension on end. 
+      """
+      L_samples, all_samples = self.results()
+      results_dict = {'L_samples':L_samples,
+                      'all_samples':all_samples}
+      scipy.io.savemat(filepath + '.mat', results_dict)
+      return

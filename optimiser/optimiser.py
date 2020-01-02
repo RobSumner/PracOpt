@@ -15,6 +15,7 @@ evaluate - Function to evaluate performance of an optimisation method.
 
 from optimiser import objective
 from optimiser.archive import Archive
+from optimiser.utils import progress_bar
 from enum import Enum
 import numpy as np 
 import copy
@@ -45,9 +46,13 @@ class SimAnneal:
                   initial_temp_mode="kirkpatrick", max_step=2):
       """Initialise the optimiser.
          Parameters:
+         objective - Objective function which is to be minimised. 
          trial_mode - Defines how the trial solutions are generated.
+                    - Options are 'basic', 'vanderbilt' and 'parks'.
          initial_temp_mode - Defines how initial temperature is set.
-         max_step - Maximum allowable step size to be used in the objective function. 
+                           - Options are 'preset', 'kirkpatrick', 'white'.
+         max_step - Maximum allowable step size in a single dimention 
+                    when finding new trial solutions. 
       """
       # Set new trial suggestion method
       trial_modes = ['basic','vanderbilt', 'parks']
@@ -148,7 +153,8 @@ class SimAnneal:
          Parameters:
          df - The change in objective function value for solution.
          Returns:
-         Bool - Describing if solution should be accepted."""
+         Bool - Describing if solution should be accepted.
+      """
       if df < 0:
          # Always accept if f decreases.
          self.acceptances += 1
@@ -164,11 +170,14 @@ class SimAnneal:
 
    def new_trial_solution(self, x0=None):
       """Return new trial solution following trial mode.
+         Trial modes are set at initialisation. 
+         Possible options are basic, vanderbilt or parks.
          Parameters:
          x0 - Starting point for the new trial x. If x0 is not provided,
                the current self.x value is used.
          Returns:
-         x_new - New trial position of same dimension as input x0."""      
+         x_new - New trial position of same dimension as input x0.
+      """      
       # Set start point if none provided.
       if x0 is None:
          x0 = self.x
@@ -245,7 +254,10 @@ class SimAnneal:
       return x_new
 
    def update_temperature(self):
-      """Update the annealing temperature."""
+      """Update the annealing temperature.
+         - Temperature is updated every decrement_length evaluations. 
+         - Q matrix is updated whenever the temperature is decreased. 
+      """
       # Implement basic length based decrement. 
       self.current_T = self.initial_T*0.95**(self.trials // self.decrement_length)
 
@@ -257,14 +269,15 @@ class SimAnneal:
 
    def set_initial_temp(self):
       """Set the initial temperature based upon initial_temp_mode:
-         KIRKPATRIC - Based on Kirkpatrick [1984] 
+         kirkpatric - Based on Kirkpatrick [1984] 
                     - Set T0 so av. prob. of solution increasing f
                       is ~0.8.
-         WHITE - Based on White [1984] 
+         white - Based on White [1984] 
                - Set T0 = sigma where sigma issd of variation in 
                  objective function during initial search.
-         PRESET - Use a constant value preset in the class.
-                - Default value is 10e10 in this case."""
+         preset - Use a constant value preset in the class.
+                - Default value is 10e10 in this case.
+      """
       if self.initial_temp_mode == "preset":
          # Temp already set in class - no calculation needed.
          return
@@ -312,7 +325,7 @@ class SimAnneal:
          dim - Dimension of random sample to be generated.
          Returns:
          x - Randomly generated number or array of numbers of dimension dim.
-         """
+      """
       # Set default values
       if x_min is None:
          x_min = self.objective.x_min
@@ -327,46 +340,188 @@ class SimAnneal:
       x_range = x_max - x_min
       return (np.random.rand(dim,1)*x_range) + x_min   
 
-def progress_bar(value, max_value, width=15):
-   """Print a progress bar utilising the carriage return function.
-      value - Number representing the current progress of process.
-      Parameters:
-      max_value - Maximum possible value in process 
-      width - Number of characters in the progress bar."""
-   progress = round(value/max_value*width)
-   remaining = width - progress
-   print('\rOptimisation Progress: ' + "+"*progress + "-"*remaining, end="")
 
-def evaluate(SimAnneal, runs=25):
-   """Evaluate the performance of an optimiser class.
-      Parameters:
-      SimAnneal - Simulated annealing class. 
-      runs - Number of separate optimise runs to perform. 
-      Returns:
-      performance_data - Averaged data on performance over iteration 
-                         and time."""
+class ParticleSwarm:
+   """
+   Implement particle swarm optimisation (PSO). 
+   Parameters
+   ---------- 
 
-   max_evals = SimAnneal.max_evaluations
-   f_data = np.zeros((max_evals, runs))
-   time_data = np.zeros((max_evals, runs))
+   Public Methods
+   -------------- 
 
-   for i in range(runs):
-      # Reset all values
-      SimAnneal.reset()
+   """
+   def __init__(self, objective, n_particles=25):
+      """Initialise the particle.
+         Parameters:
+         objective - Objective function which is to be minimised. 
+         n_particles - Number of particles to use. 
+      """
+      # Set objective function
+      self.objective = objective
+      self.dimension = objective.n
 
-      # Run the optimisation
-      print("Analysis run: ", i)
-      SimAnneal.run()
+      # Particle position & velocity storage.
+      self.n_particles = n_particles
+      self.particle_x = np.zeros((n_particles, self.dimension))
+      self.particle_v = np.zeros((n_particles, self.dimension))
 
-      # Get objective data
-      data = SimAnneal.archive.objective_data(max_evals)
-      f_data[:,i] = data[:,2]
-      time_data[:,i] = data[:,1]
+      # Particle best known positions and f values 
+      self.particle_best_x = np.zeros((n_particles, self.dimension))
+      self.particle_best_f = np.ones((n_particles, 1))*np.Inf # Initalise to max
+
+      # Global best position and value
+      self.global_best_x = np.zeros((self.dimension))
+      self.global_best_f = np.Inf # Initialise to max
+
+      # Velocity update parameters
+      self.omega = 0.5
+      self.phi_p = 0.25
+      self.phi_g = 0.75
+
+      # Limit on evaluations
+      self.max_evaluations = 10000 
+
+      # Archive process. 
+      self.archive = Archive()
+
+   def run(self):
+      """Run the optimsation method."""
+      # Initialise the particles
+      self.initialise()
+
+      # Search up to 10000 objective function evaluations
+      while self.objective.evaluations < self.max_evaluations:
+         # Display progress
+         progress_bar(self.objective.evaluations, self.max_evaluations)
+
+         for particle_id in range(self.n_particles):
+            # Update particle velocites
+            self.update_velocity(particle_id)
+
+            # Update particle position.
+            self.particle_x[particle_id,:] += self.particle_v[particle_id,:]
+
+            # Update best particle position
+            f_val = self.objective.f(self.particle_x[particle_id,:])
+            if f_val < self.particle_best_f[particle_id]:
+               self.particle_best_f[particle_id] = f_val
+               self.particle_best_x[particle_id,:] = self.particle_x[particle_id,:]
+
+            # Update global best position
+            if f_val < self.global_best_f:
+               self.global_best_f = f_val
+               self.global_best_x = self.particle_x[particle_id,:]
+
+            # Store position in archive
+            self.archive.add(self.particle_x[particle_id,:], f_val, 
+                              self.objective.evaluations)
+
+      # Reset output from carriage return
+      print("") 
+
+   def reset(self):
+      """Reset the optimisation method."""
+      # Reset particles and f storage
+      self.particle_x = np.zeros((self.n_particles, self.dimension))
+      self.particle_v = np.zeros((self.n_particles, self.dimension))
+      self.particle_best_x = np.zeros((self.n_particles, self.dimension))
+      self.particle_best_f = np.ones((self.n_particles, 1))*np.Inf # Initalise to max
+      self.global_best_x = np.zeros((self.dimension))
+      self.global_best_f = np.Inf # Initialise to max
+
+      # Reset archive & objective
+      self.archive.reset()
+      self.objective.reset()
    
-   # Average across runs.
-   f_average = np.reshape(np.mean(f_data, axis=1), (max_evals,1))
-   t_average = np.reshape(np.mean(time_data, axis=1), (max_evals,1))
-   iters = np.reshape(np.linspace(1, max_evals, max_evals), (max_evals,1))
+   def initialise(self):
+      """Initialise particle positions and velocities.
+         Positions are initialised to cover full range of objective function.
+      """
+      for i in range(self.n_particles):
+         # Initialise position to cover full objective range
+         new_x = np.reshape(self.uniform_random(dim=self.dimension), (self.dimension))
+         self.particle_x[i,:] = new_x
 
-   return np.concatenate((iters, t_average, f_average), axis=1)
+         # Particles best position is current position
+         self.particle_best_x[i,:] = new_x
+         f_val = self.objective.f(new_x) 
+         self.particle_best_f[i,0] = f_val
+
+         # Update global best.
+         if f_val < self.global_best_f:
+            self.global_best_f = f_val
+            self.global_best_x = new_x
+         
+         # Initialise particles velocity
+         v_width = self.objective.x_max - self.objective.x_min
+         new_v = np.reshape(self.uniform_random(-1*v_width, v_width, 
+                              dim=self.dimension),  (self.dimension))
+         self.particle_v[i,:] = new_v
+
+   def update_velocity(self, particle_index):
+      """Update the velocity of particle with index particle_index.
+         New velcity is put in place. 
+         Checks are made here that the new velocity produces a valid position. 
+         Parameters:
+         particle_index - Storage index of particle being updated. 
+      """
+      # Check particle range
+      if particle_index < 0 or particle_index >= self.n_particles:
+         raise ValueError("Particle index doesn't match number of particles")
+
+      # Parameters in the velocity update
+      current_x = self.particle_x[particle_index,:]
+      current_v = self.particle_v[particle_index,:]
+      current_p = self.particle_best_x[particle_index,:]
+
+      v_new = np.zeros((self.dimension))
+      for d in range(self.dimension):
+         # Differenctes between particle and global best 
+         diff_p = current_p[d] - current_x[d]
+         diff_g = self.global_best_x[d] - current_x[d]
+
+         # [rp, rg] selections
+         rand = self.uniform_random(x_min=0, x_max=1, dim=2)
+         # PSO velocity update.
+         v_new[d] = self.omega * current_v[d] + \
+                   self.phi_p * rand[0] * diff_p + \
+                   self.phi_g * rand[1] * diff_g
+         
+         # Reduce inertia until new position is feasible.
+         x_new = current_x + np.ones(current_x.shape) * v_new[d]
+         it = 1
+         while not self.objective.is_feasible(x_new, index=d):
+            v_new[d] = self.omega*0.5**it * current_v[d] + \
+                   self.phi_p * rand[0] * diff_p + \
+                   self.phi_g * rand[1] * diff_g
+            x_new = current_x + np.ones(current_x.shape) * v_new[d]
+            it += 1
+            
+      # Update velocity 
+      self.particle_v[particle_index] = v_new
+      return
+   
+   def uniform_random(self, x_min=None, x_max=None, dim=1):
+      """Return nD sample from scaled uniform random variable.
+         Parameters:
+         [x_min, x_max] - The range for generated numbers. This defaults
+                           to the provided objective function values. 
+         dim - Dimension of random sample to be generated.
+         Returns:
+         x - Randomly generated number or array of numbers of dimension dim.
+      """
+      # Set default values
+      if x_min is None:
+         x_min = self.objective.x_min
+      if x_max is None:
+         x_max = self.objective.x_max
+
+      # Check the range of values. 
+      if x_min >= x_max:
+         raise ValueError("Incorrect random number range.")
+
+      # Generate number
+      x_range = x_max - x_min
+      return  (np.random.rand(dim,1)*x_range) + x_min
    

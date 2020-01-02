@@ -2,8 +2,9 @@
 
 import pytest
 import numpy as np
-from optimiser.optimiser import SimAnneal, evaluate
+from optimiser.optimiser import SimAnneal
 from optimiser.objective import Shubert, ObjectiveTest
+from optimiser.utils import evaluate
 
 # Simulated annealing with test objective functions
 @pytest.fixture

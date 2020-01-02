@@ -7,6 +7,7 @@ Archive - Class to act as archive or storage method for optimsation.
 
 import numpy as np
 import time
+import copy
 
 class Archive:
    """Storage method for optimisation. 
@@ -51,6 +52,12 @@ class Archive:
          x - Current x sample point. 
          f - Current objective function value. 
          iteration - Current evaluation iteration."""
+      # Deepcopy to prevent alteration. 
+      x = copy.deepcopy(x)
+      f = copy.deepcopy(f)
+      iteration = copy.deepcopy(iteration)
+
+      # Convert to numpy array if needed. 
       if not isinstance(x, np.ndarray):
          x = np.array([x])
       self.all_x_values.append(x)
@@ -105,7 +112,8 @@ class Archive:
          all_samples - Every sample recorded, one row per sample.
                      - Row:[sample point, objective value, evaluation, time]
                      - Evaluation Iteration may not increase evenly as it is 
-                        the iteration of objective function evaluation."""
+                        the iteration of objective function evaluation.
+      """
       n = len(self.all_x_values)
       d = len(self.all_x_values[0])
       x_data = np.reshape(np.array(self.all_x_values), (n,d))

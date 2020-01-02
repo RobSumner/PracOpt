@@ -60,6 +60,19 @@ def test_archive_add(new_arch, new_arch2):
    f_vals = np.linspace(0, new_arch2.L_length, new_arch2.L_length-1)
    assert sum(new_arch2.L_f_values) == sum(f_vals)
 
+   # Test adding values which then change 
+   # For example if arrays are edited, this saves values 
+   # rather than pointers. 
+   x_point = np.ones((1,))*5
+   vals = np.ones((2,))*2
+   new_arch2.add(x_point, vals[0], vals[1])
+   assert new_arch2.all_x_values[-1] == 5
+   assert new_arch2.all_f_values[-1] == 2
+   x_point[0] = 6
+   vals[0] = 3
+   assert new_arch2.all_x_values[-1] == 5
+   assert new_arch2.all_f_values[-1] == 2
+
 def test_archive_results(new_arch):
    """Test the results method for archive."""
    l, samples = new_arch.results()

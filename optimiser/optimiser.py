@@ -360,7 +360,7 @@ class ParticleSwarm:
    uniform_random      - Return sample from uniform variable in range
                            x_min, x_max. 
    """
-   def __init__(self, objective, n_particles=25, omega=0.5, phi_p=0.25, phi_g=0.7):
+   def __init__(self, objective, n_particles=25, omega=0.5, phi_p=0.25, phi_g=0.75):
       """Initialise the particle.
          Parameters:
          objective - Objective function which is to be minimised. 

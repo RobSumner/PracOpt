@@ -11,17 +11,16 @@ import time
 import copy
 
 class Archive:
-   """Storage method for optimisation. 
+   """Storage method for optimisation employing best L-Dissimilarity. 
    Parameters
    ----------
-   length - Storage length of the archive. Default value is 20.  
+   length - Storage length of the dissimilarity archive. Default value is 20.  
 
    Public Methods
    -------------- 
-   add - Add values to the archive. x is a sample point and f is objective
-         function value at this point. 
-   results - Return dissimilarity archive and all sample results as an numpy array 
-             that can be used for plotting. 
+   add - Add values to the archive.
+   results - Return dissimilarity archive and all sample results as an numpy 
+             array that can be used for plotting. 
    objective_data - For argument max_iter, return a [max_iter x 3] array of 
                     interpolated f and time values for linearly spaced 
                     iterations in range 1:1:max_iter.
@@ -31,14 +30,16 @@ class Archive:
                 - Returns similarity, index
                 - Note a small similarity measure indicates similar points. 
    similarity - Returns the l2 norm similarity measure for two points.
+   save_mat - Save Archive results as a .mat file for use elsewhere. 
    """
 
    def __init__(self, length=20):
       """Initialise the optimiser.
          Parameters:
-         length - The length L of the L dissimilarity archive."""
-      self.all_x_values = [] # Sample points
-      self.all_f_values = []  # Objective function values.
+         length - The length L of the L dissimilarity archive.
+      """
+      self.all_x_values = [] # All Sample points provided to archive.
+      self.all_f_values = []  # All Objective function values.
       self.all_time_track = [] # Iteration & time of archiving
       self.L_length = length # Length of L dissimilarity archive.
       self.L_x_values = [] # L dissimilarity x values
@@ -52,7 +53,8 @@ class Archive:
          Parameters:
          x - Current x sample point. 
          f - Current objective function value. 
-         iteration - Current evaluation iteration."""
+         iteration - Current evaluation iteration.
+      """
       # Deepcopy to prevent alteration. 
       x = copy.deepcopy(x)
       f = copy.deepcopy(f)
@@ -61,10 +63,13 @@ class Archive:
       # Convert to numpy array if needed. 
       if not isinstance(x, np.ndarray):
          x = np.array([x])
+
+      # Store every value in list.
       self.all_x_values.append(x)
       self.all_f_values.append(f)
       self.all_time_track.append(np.array([iteration, time.process_time()]))
 
+      # Update L-dissimilarity archive - only stores smaller number. 
       if len(self.L_x_values) > 0:
          # Worst and Best current solution indices
          i_worst = np.argmax(self.L_f_values)
@@ -115,6 +120,7 @@ class Archive:
                      - Evaluation Iteration may not increase evenly as it is 
                         the iteration of objective function evaluation.
       """
+      # Convert every sample into useful form. 
       n = len(self.all_x_values)
       d = len(self.all_x_values[0])
       x_data = np.reshape(np.array(self.all_x_values), (n,d))
@@ -122,7 +128,7 @@ class Archive:
       time = np.reshape(np.array(self.all_time_track), (n,2))
       all_samples = np.concatenate((x_data, f_data, time), axis=1)
 
-
+      # Convert the L dissimilarity archive. 
       x_data = np.reshape(np.array(self.L_x_values), (len(self.L_x_values),d))
       f_data = np.reshape(np.array(self.L_f_values), (len(self.L_f_values),1))
       L_samples = np.concatenate((x_data, f_data), axis=1)
@@ -133,7 +139,7 @@ class Archive:
       """Function to summarise objective function data in a usable form.
          This can be used to compare between methods. 
          Parameters:
-         max_iter - Number of iterations that data should be to extrapolates
+         max_iter - Number of iterations that data should be extrapolated
                     or interpolated to fit.
          Returns:
          data - A [max_iter x 3] array of interpolated objective function

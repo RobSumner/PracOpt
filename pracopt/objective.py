@@ -1,119 +1,219 @@
-"""Define Objective Function
+"""Objective Functions
 
-Classes
--------
-Shubert - n dimensional Shubert function.
-ObjectiveTest - n dimensional test function. 
+This module contains a set of objective function definitions.
+
 """
 
+from abc import ABC, abstractmethod
 import numpy as np
 
-class Shubert:
-   """n dimensional Shubert function
-   Parameters
-   ----------
-   n - Dimension of the function. 
+class Objective(ABC):
+    """Base Objective Class.
 
-   Public Methods
-   --------------
-   is_feasible - Returns True if point x is feasible or False if not. 
-   f - Returns value of objective function at point x. 
-   reset - Reset variable parameters. 
-   """
+    Base objective class defining required objective function pattern
+    for optimiser.
 
-   def __init__(self, n):
-      """Initialise Shubert function properties.
-         Parameters:
-         n - Dimension of the function.   
-      """
-      if type(n) is not int or n <= 0:
-         raise ValueError('Dimension must be integer greater than 0.')
-      self.n = n
+    """
+    def __init__(self):
+        super().__init__()
 
-      # Solution bounds.
-      self.x_min = -2
-      self.x_max = 2
+    @abstractmethod
+    def is_feasible(self, x):
+        """Check feasibility of point.
 
-      # Number of function evaluations. 
-      self.evaluations = 0
+        Check the feasibility of a sample point x.
 
-   def is_feasible(self, x, index=None):
-      """Check feasibility of a point. 
-         Parameters:
-         x - Point to be checked.
-         index - If supplied, the specific component x[index] is checked only.
-               - If None supplied (default) the whole vector x is checked.
-         Returns:
-         Bool - True if feasible, False if not."""
-      # Check the input variable
-      size = 1
-      for dim in np.shape(x): size *= dim
-      if len(x) != self.n or size != self.n:
-         raise ValueError('Dimension of x does not match function definition.')
-      if index is not None:
-         if index < 0 or index >= self.n:
-            raise ValueError('Index exceeds dimension of function.')
+        Parameters
+        ----------
+        x : :class:`numpy.array`
+            Sample point to check.
 
-      if index is None:
-         for x_i in x:
-            if x_i < self.x_min or x_i > self.x_max:
-               return False
-      elif x[index] < self.x_min or x[index] > self.x_max:
-            return False
-      return True
+        Returns
+        -------
+        feasible : :obj:`bool`
+            True if point is feasible, False otherwise.
 
-   def f(self, x):
-      """Evaluate objective function at point.
-         Parameters:
-         x - Point to evaluate function at.
-         Returns:
-         Float - Value of objective function at point."""
-      if not self.is_feasible(x):
-         raise ValueError("Point x must lie in feaisble region.")
+        """
+        pass
 
-      # Increment evaluation number
-      self.evaluations += 1
+    @abstractmethod
+    def f(self, x):
+        """"Objective function.
 
-      obj_val = 0
-      for i in range(0, self.n):
-         for j in range(1, 6):
-            obj_val += j*np.sin((j+1)*x[i] + j)
-      return obj_val
+        Calculate objective function value at a sample point.
 
-   def reset(self):
-      """Reset variable objective function parameters."""
-      self.evaluations = 0
+        Parameters
+        ----------
+        x : :class:`numpy.array`
+            Sample point to check.
 
-class ObjectiveTest:
-   """1 dimensional test function with limits [-2,2]
-   Parameters
-   ---------- 
+        Returns
+        -------
+        obj_val : :obj:`float`
+            Objective function value at sample point.
 
-   Public Methods
-   --------------
-   is_feasible(x) - Returns True if x lies in range [-2,2].
-   f(x)  - Returns magnitude of x. 
-   """
+        """
+        pass
 
-   def __init__(self):
-      """Initialise Shubert function properties."""
-      self.n = 1
-      self.x_max = 2
-      self.x_min = -2
-      self.max_step = 1
+    @abstractmethod
+    def reset(self):
+        """Reset the objective function.
 
-   def is_feasible(self, x, index=None):
-      """Returns true for all points."""
-      for x_i in x:
-         if x_i < self.x_min or x_i > self.x_max:
-            return False
-      return True
+        """
+        pass
 
-   def f(self, x):
-      """Return absolute value of x."""
-      return np.linalg.norm(x, 1)
-   
-   def reset(self):
-      """Reset variable objective function parameters."""
-      self.evaluations = 0
-   
+class Shubert(Objective):
+	"""N-dimensional Shubert function.
+
+    Class implementing an N-dimensional Shubert function.
+
+    Parameters
+	----------
+	n : :obj:`int`
+        Dimension of the function.
+
+    Attributes
+    ----------
+    evaluations : :obj:`int`
+        The number of objective function evaluation calls made.
+
+	"""
+
+	def __init__(self, n):
+		if type(n) is not int or n <= 0:
+			raise ValueError('Dimension must be integer greater than 0.')
+		self.n = n
+
+		self._x_min = -2
+		self._x_max = 2
+
+		self.evaluations = 0
+
+	def is_feasible(self, x, index=None):
+		"""Check feasibility of point.
+
+        Check the feasibility of a sample point x.
+
+        Parameters
+        ----------
+        x : :class:`numpy.array`
+            Sample point to check.
+
+        Returns
+        -------
+        feasible : :obj:`bool`
+            True if point is feasible, False otherwise.
+
+        """
+		size = 1
+		for dim in np.shape(x): size *= dim
+		if len(x) != self.n or size != self.n:
+			raise ValueError('Dimension of x does not match function definition.')
+		if index is not None:
+			if index < 0 or index >= self.n:
+				raise ValueError('Index exceeds dimension of function.')
+
+		if index is None:
+			for x_i in x:
+				if x_i < self._x_min or x_i > self._x_max:
+					return False
+		elif x[index] < self._x_min or x[index] > self._x_max:
+				return False
+
+		return True
+
+	def f(self, x):
+		""""Objective function.
+
+        Calculate objective function value at a sample point.
+
+        Parameters
+        ----------
+        x : :class:`numpy.array`
+            Sample point to check.
+
+        Returns
+        -------
+        obj_val : :obj:`float`
+            Objective function value at sample point.
+
+        """
+		if not self.is_feasible(x):
+			raise ValueError("Point x must lie in feasible region.")
+
+		self.evaluations += 1
+		obj_val = 0
+		for i in range(0, self.n):
+			for j in range(1, 6):
+				obj_val += j*np.sin((j+1)*x[i] + j)
+		return obj_val
+
+	def reset(self):
+		"""Reset the objective function.
+
+        """
+		self.evaluations = 0
+
+class ObjectiveTest(Objective):
+	"""1 dimensional test function with limits [-2,2]
+
+    This objective function returns the absolute value of x.
+
+    Attributes
+    ----------
+    evaluations : :obj:`int`
+        The number of objective function evaluation calls made.
+
+	"""
+
+	def __init__(self):
+		self.n = 1
+		self._x_max = 2
+		self._x_min = -2
+		self._max_step = 1
+
+	def is_feasible(self, x, index=None):
+		"""Check feasibility of point.
+
+        Check the feasibility of a sample point x.
+
+        Parameters
+        ----------
+        x : :class:`numpy.array`
+            Sample point to check.
+
+        Returns
+        -------
+        feasible : :obj:`bool`
+            True for all points for this test case.
+
+        """
+		for x_i in x:
+			if x_i < self._x_min or x_i > self._x_max:
+				return False
+		return True
+
+	def f(self, x):
+		""""Objective function.
+
+        Objective function is absolute value of x at the give point.
+
+        Parameters
+        ----------
+        x : :class:`numpy.array`
+            Sample point to check.
+
+        Returns
+        -------
+        obj_val : :obj:`float`
+            Absolute value of x.
+
+        """
+		return np.linalg.norm(x, 1)
+
+	def reset(self):
+		"""Reset the objective function.
+
+        """
+		self.evaluations = 0
+

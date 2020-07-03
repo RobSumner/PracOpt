@@ -1,11 +1,13 @@
 """Test the particle swarm optimisation class"""
 
-import pytest 
-import numpy as np
 import copy
-from optimiser.optimiser import ParticleSwarm
-from optimiser.objective import Shubert, ObjectiveTest
-from optimiser.utils import evaluate
+
+import pytest
+import numpy as np
+
+from pracopt.optimiser import ParticleSwarm
+from pracopt.objective import Shubert, ObjectiveTest
+from pracopt.utils import evaluate
 
 # PSO with test objective functions
 @pytest.fixture
@@ -76,9 +78,9 @@ def test_pso_particle_init(new_pso5):
       # Best position should be current position
       assert all([a == b for a, b in zip(pos, new_pso5.particle_best_x[i,:])])
       # Velocity should be in range [-4,4]
-      assert all([a <= b for a, b in zip(new_pso5.particle_v[i,:], 
+      assert all([a <= b for a, b in zip(new_pso5.particle_v[i,:],
                   4*np.ones((new_pso5.dimension,1)))])
-      
+
 def test_velocity_update(new_pso5):
    """Test updating the velocity of a particle."""
    # Index outside range will fail

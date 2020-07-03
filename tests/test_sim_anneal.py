@@ -2,9 +2,10 @@
 
 import pytest
 import numpy as np
-from optimiser.optimiser import SimAnneal
-from optimiser.objective import Shubert, ObjectiveTest
-from optimiser.utils import evaluate
+
+from pracopt.optimiser import SimAnneal
+from pracopt.objective import Shubert, ObjectiveTest
+from pracopt.utils import evaluate
 
 # Simulated annealing with test objective functions
 @pytest.fixture
@@ -24,7 +25,7 @@ def new_test_sim_white():
    obj = ObjectiveTest()
    return SimAnneal(obj, trial_mode='basic', initial_temp_mode='white')
 
-# Simulated annealing with 2D Shubert objective functions. 
+# Simulated annealing with 2D Shubert objective functions.
 @pytest.fixture
 def new_sim2():
    """Return a new instance of the simulated annealing class
@@ -48,7 +49,7 @@ def new_sim2_white():
 
 @pytest.fixture
 def new_sim2_parks():
-   """Return new instance of sim annealing class with 2D 
+   """Return new instance of sim annealing class with 2D
       Shubert function and Parks trial solution method."""
    obj = Shubert(2)
    return SimAnneal(obj, trial_mode='parks', initial_temp_mode='white')
@@ -101,9 +102,9 @@ def test_sim_anneal_rand(new_sim5, new_test_sim):
 
 def test_new_basic_trial_solution(new_sim5):
    """Test new trial proposal method."""
-   # Check class 
+   # Check class
    assert all([a == b for a, b in zip(new_sim5.x, np.zeros((5,1)))])
-   # Test starting point using class start point. 
+   # Test starting point using class start point.
    assert new_sim5.trials == 0
    new_x = new_sim5.new_trial_solution()
    assert all([a != b for a, b in zip(new_x, np.zeros((5,1)))])
@@ -118,9 +119,9 @@ def test_new_basic_trial_solution(new_sim5):
 
 def test_new_vanderbilt_trial_solution(new_sim2_vanderbilt):
    """Test new trial proposal method."""
-   # Check class 
+   # Check class
    assert all([a == b for a, b in zip(new_sim2_vanderbilt.x, np.zeros((2,1)))])
-   # Test starting point using class start point. 
+   # Test starting point using class start point.
    assert new_sim2_vanderbilt.trials == 0
    new_x = new_sim2_vanderbilt.new_trial_solution()
    assert all([a != b for a, b in zip(new_x, np.zeros((2,1)))])
@@ -132,9 +133,9 @@ def test_new_vanderbilt_trial_solution(new_sim2_vanderbilt):
 
 def test_new_parks_trial_solution(new_sim2_parks):
    """Test new trial proposal method."""
-   # Check class 
+   # Check class
    assert all([a == b for a, b in zip(new_sim2_parks.x, np.zeros((2,1)))])
-   # Test starting point using class start point. 
+   # Test starting point using class start point.
    assert new_sim2_parks.trials == 0
    new_x = new_sim2_parks.new_trial_solution()
    assert all([a != b for a, b in zip(new_x, np.zeros((2,1)))])
@@ -147,7 +148,7 @@ def test_new_parks_trial_solution(new_sim2_parks):
       assert new_sim2_parks.D_matrix[i][i] == (1-a)*new_sim2_parks.max_step \
                                                  + a*w*np.abs(new_x[i][0])
 
-def test_set_initial_temperature(new_test_sim, new_test_sim_white, new_sim2, 
+def test_set_initial_temperature(new_test_sim, new_test_sim_white, new_sim2,
                                  new_sim2_white, new_sim5, new_sim5_white):
    """Test initial temperature calculation."""
    np.random.seed(seed=1)
@@ -163,7 +164,7 @@ def test_set_initial_temperature(new_test_sim, new_test_sim_white, new_sim2,
    assert new_test_sim_white.current_T == 10e10
    new_test_sim_white.set_initial_temp()
    assert round(new_test_sim_white.initial_T*100)/100 == 0.39
-   
+
    # Kirkpatric method
    assert new_sim2.initial_T == 10e10
    assert new_sim2.current_T == 10e10
@@ -239,10 +240,10 @@ def test_run_reset(new_sim2):
    new_sim2.reset()
    assert all([a == b for a, b in zip(new_sim2.x, np.zeros((2,1)))])
    assert new_sim2.initial_T == 10e10
-   assert new_sim2.current_T == 10e10 
+   assert new_sim2.current_T == 10e10
    assert new_sim2.trials == 0
-   assert new_sim2.acceptances == 0 
-   assert np.sum(new_sim2.Q_matrix) == 4 
+   assert new_sim2.acceptances == 0
+   assert np.sum(new_sim2.Q_matrix) == 4
 
 def test_evaluate(new_sim2):
    """Test the evaluation function."""
@@ -250,4 +251,3 @@ def test_evaluate(new_sim2):
    results = evaluate(new_sim2, runs=2)
    assert results.shape[0] == new_sim2.max_evaluations
    assert results.shape[1] == 3
-   

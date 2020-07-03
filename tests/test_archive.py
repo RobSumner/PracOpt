@@ -2,7 +2,8 @@
 
 import pytest
 import numpy as np
-from optimiser.archive import Archive
+
+from pracopt.archive import Archive
 
 @pytest.fixture
 def new_arch():
@@ -60,9 +61,9 @@ def test_archive_add(new_arch, new_arch2):
    f_vals = np.linspace(0, new_arch2.L_length, new_arch2.L_length-1)
    assert sum(new_arch2.L_f_values) == sum(f_vals)
 
-   # Test adding values which then change 
-   # For example if arrays are edited, this saves values 
-   # rather than pointers. 
+   # Test adding values which then change
+   # For example if arrays are edited, this saves values
+   # rather than pointers.
    x_point = np.ones((1,))*5
    vals = np.ones((2,))*2
    new_arch2.add(x_point, vals[0], vals[1])
@@ -91,7 +92,7 @@ def test_archive_objective_data(new_arch):
    assert shape[1] == 3
    assert sum(data[:,2]) == 110*100
    assert data[-1,0] == 110
-   assert data[0,1] == 0
+   assert data[0,1] == pytest.approx(0, abs=1e04)
 
 def test_archive_reset(new_arch2):
    """Test the reset method for archive."""
@@ -108,12 +109,12 @@ def test_archive_reset(new_arch2):
    assert len(new_arch2.all_time_track) == 0
    assert len(new_arch2.L_x_values) == 0
    assert len(new_arch2.L_f_values) == 0
-   
 
-@pytest.mark.parametrize("point_1, point_2, value", 
+
+@pytest.mark.parametrize("point_1, point_2, value",
       [([1], [1], 0),
        ([1, 1], [1, 1], 0),
-       ([1, 2, 3, 4, 5], [1, 2, 3, 4, 5], 0), 
+       ([1, 2, 3, 4, 5], [1, 2, 3, 4, 5], 0),
        ([1, 2], [1, 1], 1),
        ([5, -2], [-6, 4], 12.529964)])
 
@@ -124,7 +125,7 @@ def test_similarity_measure(new_arch, point_1, point_2, value):
    assert new_arch.similarity(point_1, point_2) == pytest.approx(value)
 
 
-@pytest.mark.parametrize("point, sim, index", 
+@pytest.mark.parametrize("point, sim, index",
       [(np.array([1,1]), 0, 0),
        (np.array([1,2]), 0, 1),
        (np.array([3,1]), 0, 2),
@@ -138,4 +139,4 @@ def test_most_similar(new_arch3, point, sim, index):
    assert sim_val == sim
    assert index_val == index
 
-   
+

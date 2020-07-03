@@ -1,7 +1,8 @@
 """Test the objective functions."""
 
 import pytest
-from optimiser import objective
+
+from pracopt import objective
 
 @pytest.fixture
 def new_shubert5():
@@ -28,11 +29,11 @@ def test_shubert_init():
       objective.Shubert(-10)
 
 
-@pytest.mark.parametrize("point,id,feasible", [([ 1, 1], 0, True),  
-                                               ([ 2, 2], 0, True), 
-                                               ([-2,-2], 0, True),  
+@pytest.mark.parametrize("point,id,feasible", [([ 1, 1], 0, True),
+                                               ([ 2, 2], 0, True),
+                                               ([-2,-2], 0, True),
                                                ([-3, 1], 0, False),
-                                               ([-1, 3], 1, False), 
+                                               ([-1, 3], 1, False),
                                                ([10,10], 0, False)])
 def test_shubert2_feasible(new_shubert2, point, id, feasible):
    """Test the feasibility check for 2D Shubert function."""
@@ -46,11 +47,11 @@ def test_shubert2_feasible(new_shubert2, point, id, feasible):
       new_shubert2.is_feasible([1])
 
 
-@pytest.mark.parametrize("point,id,feasible", [([ 1, 1, 1, 1, 1], 0, True), 
-                                               ([ 2, 2, 2, 2, 2], 0, True), 
+@pytest.mark.parametrize("point,id,feasible", [([ 1, 1, 1, 1, 1], 0, True),
+                                               ([ 2, 2, 2, 2, 2], 0, True),
                                                ([-2,-2,-2,-2,-2], 0, True),
                                                ([-3, 1, 1, 1, 1], 0, False),
-                                               ([-1, 3, 2, 3, 4], 1, False), 
+                                               ([-1, 3, 2, 3, 4], 1, False),
                                                ([10,10,10,10,10], 1, False)])
 
 def test_shubert5_feasible(new_shubert5, point, id, feasible):
@@ -65,11 +66,11 @@ def test_shubert5_feasible(new_shubert5, point, id, feasible):
       new_shubert5.is_feasible([1,1,1,1,1,1])
 
 
-@pytest.mark.parametrize("point,value", [([  1, 1], -6.3145), 
+@pytest.mark.parametrize("point,value", [([  1, 1], -6.3145),
                                          ([ -1, 1], -15.7793),
-                                         ([  1,-1], -15.7793), 
+                                         ([  1,-1], -15.7793),
                                          ([1.5, 2], -0.4637),
-                                         ([  2, 2], -5.6495), 
+                                         ([  2, 2], -5.6495),
                                          ([ -2,-2], 4.1640)])
 
 def test_shubert2_values(new_shubert2, point, value):
@@ -93,11 +94,11 @@ def test_shubert2_values(new_shubert2, point, value):
    assert new_shubert2.evaluations == 0
 
 
-@pytest.mark.parametrize("point,value", [([   1,   1,   1,  1,   1], -15.7862), 
+@pytest.mark.parametrize("point,value", [([   1,   1,   1,  1,   1], -15.7862),
                                          ([  -1,   1,  -1,  1,  -1], -44.1807),
-                                         ([   1,  -1,   1, -1,   1], -34.7159), 
+                                         ([   1,  -1,   1, -1,   1], -34.7159),
                                          ([ 1.5,  -1, 1.5, -1,   1], -23.6793),
-                                         ([ 1.5,   2, 1.5, -2,   1],   0.8220), 
+                                         ([ 1.5,   2, 1.5, -2,   1],   0.8220),
                                          ([-0.5, 1.9, 1.5, -2, 1.2],  12.2095)])
 
 def test_shubert5_values(new_shubert5, point, value):
@@ -110,7 +111,7 @@ def test_shubert5_values(new_shubert5, point, value):
 
    with pytest.raises(ValueError):
       new_shubert5.f([1,2,3,4])
-      
+
    with pytest.raises(ValueError):
       new_shubert5.f([1,2,3,4,5,6])
 

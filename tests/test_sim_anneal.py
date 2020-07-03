@@ -82,17 +82,17 @@ def test_sim_anneal_rand(new_sim5, new_test_sim):
    # Fix seed for reproducible results
    np.random.seed(seed=1)
    with pytest.raises(ValueError):
-      new_sim5.uniform_random(1,-1)
+      new_sim5._uniform_random(1,-1)
 
    for _ in range(10):
-      sample = new_sim5.uniform_random(-1,1)
+      sample = new_sim5._uniform_random(-1,1)
       assert sample >= -1
       assert sample <= 1
 
    samps = 200
    samples = np.zeros((samps,1))
    for i in range (samps):
-      samples[i] = new_test_sim.uniform_random(-2,2)
+      samples[i] = new_test_sim._uniform_random(-2,2)
    assert round(np.mean(samples)*100)/100 == 0.02
    assert round(np.std(samples)*100)/100 == 1.22
 
@@ -105,47 +105,47 @@ def test_new_basic_trial_solution(new_sim5):
    # Check class
    assert all([a == b for a, b in zip(new_sim5.x, np.zeros((5,1)))])
    # Test starting point using class start point.
-   assert new_sim5.trials == 0
-   new_x = new_sim5.new_trial_solution()
+   assert new_sim5._trials == 0
+   new_x = new_sim5._new_trial_solution()
    assert all([a != b for a, b in zip(new_x, np.zeros((5,1)))])
-   assert new_sim5.trials == 1
+   assert new_sim5._trials == 1
 
    # Test using provided start point
    with pytest.raises(ValueError):
       # (3,1) not (5,1)
-      new_x = new_sim5.new_trial_solution([[0],[0],[0]])
-   new_x = new_sim5.new_trial_solution([0,0,0,0,0])
-   assert new_sim5.trials == 2
+      new_x = new_sim5._new_trial_solution([[0],[0],[0]])
+   new_x = new_sim5._new_trial_solution([0,0,0,0,0])
+   assert new_sim5._trials == 2
 
 def test_new_vanderbilt_trial_solution(new_sim2_vanderbilt):
    """Test new trial proposal method."""
    # Check class
    assert all([a == b for a, b in zip(new_sim2_vanderbilt.x, np.zeros((2,1)))])
    # Test starting point using class start point.
-   assert new_sim2_vanderbilt.trials == 0
-   new_x = new_sim2_vanderbilt.new_trial_solution()
+   assert new_sim2_vanderbilt._trials == 0
+   new_x = new_sim2_vanderbilt._new_trial_solution()
    assert all([a != b for a, b in zip(new_x, np.zeros((2,1)))])
-   assert new_sim2_vanderbilt.trials == 1
+   assert new_sim2_vanderbilt._trials == 1
 
    # Test using provided start point
-   new_x = new_sim2_vanderbilt.new_trial_solution([[0],[0]])
-   assert new_sim2_vanderbilt.trials == 2
+   new_x = new_sim2_vanderbilt._new_trial_solution([[0],[0]])
+   assert new_sim2_vanderbilt._trials == 2
 
 def test_new_parks_trial_solution(new_sim2_parks):
    """Test new trial proposal method."""
    # Check class
    assert all([a == b for a, b in zip(new_sim2_parks.x, np.zeros((2,1)))])
    # Test starting point using class start point.
-   assert new_sim2_parks.trials == 0
-   new_x = new_sim2_parks.new_trial_solution()
+   assert new_sim2_parks._trials == 0
+   new_x = new_sim2_parks._new_trial_solution()
    assert all([a != b for a, b in zip(new_x, np.zeros((2,1)))])
-   assert new_sim2_parks.trials == 1
+   assert new_sim2_parks._trials == 1
 
    # Check update of D matrix
-   a = new_sim2_parks.alpha
-   w = new_sim2_parks.omega
+   a = new_sim2_parks._alpha
+   w = new_sim2_parks._omega
    for i in range(2):
-      assert new_sim2_parks.D_matrix[i][i] == (1-a)*new_sim2_parks.max_step \
+      assert new_sim2_parks._D_matrix[i][i] == (1-a)*new_sim2_parks.max_step \
                                                  + a*w*np.abs(new_x[i][0])
 
 def test_set_initial_temperature(new_test_sim, new_test_sim_white, new_sim2,
@@ -154,96 +154,96 @@ def test_set_initial_temperature(new_test_sim, new_test_sim_white, new_sim2,
    np.random.seed(seed=1)
 
    # Kirkpatrick method
-   assert new_test_sim.initial_T == 10e10
-   assert new_test_sim.current_T == 10e10
-   new_test_sim.set_initial_temp()
-   assert round(new_test_sim.initial_T*100)/100 == 2.43
+   assert new_test_sim._initial_T == 10e10
+   assert new_test_sim._current_T == 10e10
+   new_test_sim._set_initial_temp()
+   assert round(new_test_sim._initial_T*100)/100 == 2.43
 
    # White method
-   assert new_test_sim_white.current_T == 10e10
-   assert new_test_sim_white.current_T == 10e10
-   new_test_sim_white.set_initial_temp()
-   assert round(new_test_sim_white.initial_T*100)/100 == 0.39
+   assert new_test_sim_white._current_T == 10e10
+   assert new_test_sim_white._current_T == 10e10
+   new_test_sim_white._set_initial_temp()
+   assert round(new_test_sim_white._initial_T*100)/100 == 0.39
 
    # Kirkpatric method
-   assert new_sim2.initial_T == 10e10
-   assert new_sim2.current_T == 10e10
-   new_sim2.set_initial_temp()
-   assert round(new_sim2.initial_T/10)*10 == 40
-   assert new_sim2.initial_T == new_sim2.current_T
+   assert new_sim2._initial_T == 10e10
+   assert new_sim2._current_T == 10e10
+   new_sim2._set_initial_temp()
+   assert round(new_sim2._initial_T/10)*10 == 40
+   assert new_sim2._initial_T == new_sim2._current_T
 
    # White method
-   assert new_sim2_white.initial_T == 10e10
-   assert new_sim2_white.current_T == 10e10
-   new_sim2_white.set_initial_temp()
-   assert round(new_sim2_white.initial_T) == 6
-   assert new_sim2_white.initial_T == new_sim2_white.current_T
+   assert new_sim2_white._initial_T == 10e10
+   assert new_sim2_white._current_T == 10e10
+   new_sim2_white._set_initial_temp()
+   assert round(new_sim2_white._initial_T) == 6
+   assert new_sim2_white._initial_T == new_sim2_white._current_T
 
    # Commented for speed - fairly slow to run.
    # Kirkpatric method
-   assert new_sim5.initial_T == 10e10
-   assert new_sim5.current_T == 10e10
-   new_sim5.set_initial_temp()
-   assert round(new_sim5.initial_T/10)*10 == 50
-   assert new_sim5.initial_T == new_sim5.current_T
+   assert new_sim5._initial_T == 10e10
+   assert new_sim5._current_T == 10e10
+   new_sim5._set_initial_temp()
+   assert round(new_sim5._initial_T/10)*10 == 50
+   assert new_sim5._initial_T == new_sim5._current_T
 
    # # White method
-   assert new_sim5_white.initial_T == 10e10
-   assert new_sim5_white.current_T == 10e10
-   new_sim5_white.set_initial_temp()
-   assert round(new_sim5_white.initial_T) == 11
-   assert new_sim5_white.initial_T == new_sim5_white.current_T
+   assert new_sim5_white._initial_T == 10e10
+   assert new_sim5_white._current_T == 10e10
+   new_sim5_white._set_initial_temp()
+   assert round(new_sim5_white._initial_T) == 11
+   assert new_sim5_white._initial_T == new_sim5_white._current_T
 
 def test_acceptable_solution(new_sim2, new_sim5):
    """Test the acceptable solution method."""
    # Negative solutions always accepted
-   assert new_sim2.acceptable_solution(-1)
-   assert new_sim5.acceptable_solution(-1)
+   assert new_sim2._acceptable_solution(-1)
+   assert new_sim5._acceptable_solution(-1)
 
    # Very large values not accepter
-   assert not new_sim2.acceptable_solution(10e20)
-   assert not new_sim5.acceptable_solution(10e20)
+   assert not new_sim2._acceptable_solution(10e20)
+   assert not new_sim5._acceptable_solution(10e20)
 
    # Give p = 0.5 with T = 10000
    sum_1 = 0
    sum_2 = 0
    runs = 10000
    for _ in range(runs):
-      if new_sim2.acceptable_solution(6.93147e10):
+      if new_sim2._acceptable_solution(6.93147e10):
          sum_1 += 1
-      if new_sim5.acceptable_solution(6.93147e10):
+      if new_sim5._acceptable_solution(6.93147e10):
          sum_2 += 1
    assert round(sum_1/runs*10)/10 == 0.5
-   assert round(new_sim2.acceptances/1000)*1000 == 5000
+   assert round(new_sim2._acceptances/1000)*1000 == 5000
    assert round(sum_2/runs*10)/10 == 0.5
-   assert round(new_sim5.acceptances/1000)*1000 == 5000
+   assert round(new_sim5._acceptances/1000)*1000 == 5000
 
 def test_temperature_update(new_sim2):
    """Test temperature decrement."""
-   assert new_sim2.current_T == 10e10
-   new_sim2.update_temperature()
-   assert new_sim2.current_T == 10e10
+   assert new_sim2._current_T == 10e10
+   new_sim2._update_temperature()
+   assert new_sim2._current_T == 10e10
 
-   for _ in range(new_sim2.decrement_length):
-      new_sim2.new_trial_solution([[0],[0]])
-   new_sim2.update_temperature()
-   assert new_sim2.current_T == 9.5e10
+   for _ in range(new_sim2._decrement_length):
+      new_sim2._new_trial_solution([[0],[0]])
+   new_sim2._update_temperature()
+   assert new_sim2._current_T == 9.5e10
 
 def test_run_reset(new_sim2):
    """Test the run function for 200 evaluations."""
    np.random.seed(seed=1)
    new_sim2.max_evaluations = 200
    new_sim2.run()
-   assert round(new_sim2.initial_T) == 30
-   assert round(new_sim2.current_T) == 25
+   assert new_sim2._initial_T == pytest.approx(30, abs=0.5)
+   assert new_sim2._current_T == pytest.approx(0.5, abs=0.5)
 
    new_sim2.reset()
    assert all([a == b for a, b in zip(new_sim2.x, np.zeros((2,1)))])
-   assert new_sim2.initial_T == 10e10
-   assert new_sim2.current_T == 10e10
-   assert new_sim2.trials == 0
-   assert new_sim2.acceptances == 0
-   assert np.sum(new_sim2.Q_matrix) == 4
+   assert new_sim2._initial_T == 10e10
+   assert new_sim2._current_T == 10e10
+   assert new_sim2._trials == 0
+   assert new_sim2._acceptances == 0
+   assert np.sum(new_sim2._Q_matrix) == 4
 
 def test_evaluate(new_sim2):
    """Test the evaluation function."""

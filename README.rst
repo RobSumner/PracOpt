@@ -3,7 +3,7 @@ PracOpt
 
 PracOpt ("Practical" + "Optimisation") is a set of tools for solving
 practical optimisation problems, based upon the 4M17 lecture series
-given by Geoff Parks at the University of Cambridge.
+given by Dr Geoff Parks at the University of Cambridge.
 
 
 Getting Started:

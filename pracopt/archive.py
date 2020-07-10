@@ -43,7 +43,6 @@ class Archive:
 
         Parameters
         ----------
-
         x : :obj:`float`
             Current sample point.
 

@@ -247,7 +247,7 @@ def test_run_reset(new_sim2):
 
 def test_evaluate(new_sim2):
    """Test the evaluation function."""
-   new_sim2.max_evaluations = 500
+   new_sim2._max_evaluations = 500
    results = evaluate(new_sim2, runs=2)
-   assert results.shape[0] == new_sim2.max_evaluations
+   assert results.shape[0] == new_sim2._max_evaluations
    assert results.shape[1] == 3

@@ -79,7 +79,7 @@ some explanation.
 
 Authors:
 --------
-* **Rob Sumner** (rob_sumner1@hotmail.co.uk)
+* **Rob Sumner**
 
 
 License:
